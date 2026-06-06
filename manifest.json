@@ -1,0 +1,13 @@
+{
+    "name": "KKMA 04 Jember",
+    "short_name": "KKMA04",
+    "description": "Website KKMA 04 Jember - Kelompok Kerja Madrasah Aliyah Kecamatan Sukowono",
+    "start_url": "./",
+    "display": "standalone",
+    "background_color": "#F5F9F5",
+    "theme_color": "#1B5E20",
+    "icons": [
+        { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+        { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    ]
+}
