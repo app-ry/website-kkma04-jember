@@ -226,9 +226,9 @@ function renderMadrasahForm(nsm){
 function renderGuru(){
     app.innerHTML=`<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
         <h4 class="mb-0"><i class="bi bi-people text-primary me-2"></i>Data Guru <span class="badge bg-secondary">${_data.guru.length}</span></h4>
-        <div class="d-flex gap-2"><div class="search-box"><i class="bi bi-search"></i><input class="form-control form-control-sm" id="sGuru" placeholder="Cari..."></div>
+        <div class="d-flex gap-2 flex-wrap"><div class="search-box"><i class="bi bi-search"></i><input class="form-control form-control-sm" id="sGuru" placeholder="Cari..."></div>
         <select class="form-select form-select-sm" style="width:auto" id="fGMdr"><option value="">Semua</option>${_data.madrasah.map(m=>`<option value="${m._id||m.nsm}">${H(m.nama)}</option>`).join('')}</select>
-        ${canEdit()?`<a href="#/guru/tambah" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i></a>`:''}</div></div>
+        ${canEdit()?`<a href="#/guru/tambah" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i></a><button class="btn btn-success btn-sm" id="btnTemplateGuru" title="Download Template"><i class="bi bi-file-earmark-excel"></i></button><button class="btn btn-warning btn-sm" id="btnImportGuru" title="Import Excel"><i class="bi bi-upload"></i></button><input type="file" id="inputImportGuru" accept=".xlsx,.xls" style="display:none">`:''}</div></div>
     <div class="form-section"><div class="table-responsive"><table class="table table-sm table-data"><thead><tr><th>No</th><th>Nama</th><th>Madrasah</th><th>Mapel</th><th>Status</th>${canEdit()?'<th>Aksi</th>':''}</tr></thead>
     <tbody id="tGuru">${_data.guru.map((g,i)=>{const m=getMadrasah(g.nsm);return`<tr data-nsm="${g.nsm}" data-q="${H((g.nama||'').toLowerCase())}"><td>${i+1}</td><td><strong>${H(g.nama)}</strong></td><td class="small">${m?H(m.nama):'-'}</td><td>${H(g.mapel||'-')}</td><td><span class="badge ${g.status_kepegawaian==='PNS'?'bg-success':'bg-secondary'}">${H(g.status_kepegawaian||'Non-PNS')}</span></td>${canEdit()?`<td><a href="#/guru/edit/${g._id}" class="btn btn-sm btn-outline-primary py-0 px-1"><i class="bi bi-pencil"></i></a> <button class="btn btn-sm btn-outline-danger py-0 px-1 dGuru" data-id="${g._id}"><i class="bi bi-trash"></i></button></td>`:''}</tr>`;}).join('')}</tbody></table></div>
     ${!_data.guru.length?'<p class="text-center text-muted">Belum ada data guru</p>':''}</div>`;
@@ -236,6 +236,38 @@ function renderGuru(){
     function fil(){const q=(sEl?.value||'').toLowerCase(),n=fEl?.value||'';document.querySelectorAll('#tGuru tr').forEach(r=>{r.style.display=(r.dataset.q.includes(q)&&(!n||r.dataset.nsm===n))?'':'none';});}
     sEl?.addEventListener('input',fil);fEl?.addEventListener('change',fil);
     document.querySelectorAll('.dGuru').forEach(b=>b.addEventListener('click',function(){if(confirm('Hapus guru ini?'))DB.remove('guru/'+this.dataset.id);}));
+    // Template Excel Guru
+    $('btnTemplateGuru')?.addEventListener('click',async()=>{
+        const wb=new ExcelJS.Workbook();
+        const ws=wb.addWorksheet('Data Guru');
+        ws.columns=[{header:'NSM Madrasah',key:'nsm',width:16},{header:'Nama Guru',key:'nama',width:30},{header:'NIP',key:'nip',width:20},{header:'NUPTK',key:'nuptk',width:18},{header:'Mapel',key:'mapel',width:20},{header:'Status (PNS/Non-PNS)',key:'status_kepegawaian',width:18},{header:'JK (L/P)',key:'jk',width:8},{header:'Pendidikan',key:'pendidikan',width:12},{header:'No HP',key:'telp',width:15}];
+        ws.getRow(1).font={bold:true};
+        // Add NSM reference sheet
+        const ws2=wb.addWorksheet('Ref Madrasah');
+        ws2.columns=[{header:'NSM',key:'nsm',width:16},{header:'Nama Madrasah',key:'nama',width:35}];
+        ws2.getRow(1).font={bold:true};
+        _data.madrasah.forEach(m=>ws2.addRow({nsm:m._id||m.nsm,nama:m.nama}));
+        const buf=await wb.xlsx.writeBuffer();
+        const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+        const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Template_Guru_KKMA04.xlsx';a.click();
+    });
+    // Import Excel Guru
+    $('btnImportGuru')?.addEventListener('click',()=>{$('inputImportGuru').click();});
+    $('inputImportGuru')?.addEventListener('change',async function(){
+        const file=this.files[0];if(!file)return;
+        const wb=new ExcelJS.Workbook();
+        await wb.xlsx.load(await file.arrayBuffer());
+        const ws=wb.worksheets[0];let count=0;
+        ws.eachRow((row,i)=>{
+            if(i===1)return;// skip header
+            const nsm=String(row.getCell(1).value||'').trim();
+            const nama=String(row.getCell(2).value||'').trim();
+            if(!nsm||!nama)return;
+            const data={nsm,nama,nip:String(row.getCell(3).value||'').trim(),nuptk:String(row.getCell(4).value||'').trim(),mapel:String(row.getCell(5).value||'').trim(),status_kepegawaian:String(row.getCell(6).value||'Non-PNS').trim(),jk:String(row.getCell(7).value||'L').trim(),pendidikan:String(row.getCell(8).value||'').trim(),telp:String(row.getCell(9).value||'').trim()};
+            DB.push('guru',data);count++;
+        });
+        alert('Import selesai: '+count+' guru ditambahkan');this.value='';
+    });
 }
 
 function renderGuruForm(editId){
@@ -266,8 +298,8 @@ function renderSiswa(){
 
     app.innerHTML=`<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
         <h4 class="mb-0"><i class="bi bi-mortarboard text-primary me-2"></i>Data Siswa <span class="badge bg-secondary">${_data.siswa.length}</span></h4>
-        <div class="d-flex gap-2"><div class="search-box"><i class="bi bi-search"></i><input class="form-control form-control-sm" id="sSiswa" placeholder="Cari..."></div>
-        ${canEdit()?`<a href="#/siswa/tambah" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i></a>`:''}</div></div>
+        <div class="d-flex gap-2 flex-wrap"><div class="search-box"><i class="bi bi-search"></i><input class="form-control form-control-sm" id="sSiswa" placeholder="Cari..."></div>
+        ${canEdit()?`<a href="#/siswa/tambah" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i></a><button class="btn btn-success btn-sm" id="btnTemplateSiswa" title="Download Template"><i class="bi bi-file-earmark-excel"></i></button><button class="btn btn-warning btn-sm" id="btnImportSiswa" title="Import Excel"><i class="bi bi-upload"></i></button><input type="file" id="inputImportSiswa" accept=".xlsx,.xls" style="display:none">`:''}</div></div>
     <div class="form-section mb-4"><h5 class="mb-3"><i class="bi bi-table text-primary me-2"></i>Rekapitulasi Per Lembaga</h5>
     <div class="table-responsive"><table class="table table-sm table-bordered table-data"><thead><tr><th rowspan="2" class="align-middle text-center">No</th><th rowspan="2" class="align-middle">Madrasah</th><th colspan="2" class="text-center">X</th><th colspan="2" class="text-center">XI</th><th colspan="2" class="text-center">XII</th><th class="text-center">Total</th></tr><tr><th class="text-center">L</th><th class="text-center">P</th><th class="text-center">L</th><th class="text-center">P</th><th class="text-center">L</th><th class="text-center">P</th><th class="text-center">Jml</th></tr></thead>
     <tbody>${rekap.map((r,i)=>`<tr><td class="text-center">${i+1}</td><td class="small">${H(r.nama)}</td><td class="text-center">${r.x_l||'-'}</td><td class="text-center">${r.x_p||'-'}</td><td class="text-center">${r.xi_l||'-'}</td><td class="text-center">${r.xi_p||'-'}</td><td class="text-center">${r.xii_l||'-'}</td><td class="text-center">${r.xii_p||'-'}</td><td class="text-center fw-bold">${r.total||'-'}</td></tr>`).join('')}</tbody>
@@ -279,6 +311,37 @@ function renderSiswa(){
     function fil(){const q=(sEl?.value||'').toLowerCase(),n=fM?.value||'',k=fK?.value||'';document.querySelectorAll('#tSiswa tr').forEach(r=>{r.style.display=(r.dataset.q.includes(q)&&(!n||r.dataset.nsm===n)&&(!k||r.dataset.kls===k))?'':'none';});}
     sEl?.addEventListener('input',fil);fM?.addEventListener('change',fil);fK?.addEventListener('change',fil);
     document.querySelectorAll('.dSiswa').forEach(b=>b.addEventListener('click',function(){if(confirm('Hapus?'))DB.remove('siswa/'+this.dataset.id);}));
+    // Template Excel Siswa
+    $('btnTemplateSiswa')?.addEventListener('click',async()=>{
+        const wb=new ExcelJS.Workbook();
+        const ws=wb.addWorksheet('Data Siswa');
+        ws.columns=[{header:'NSM Madrasah',key:'nsm',width:16},{header:'Nama Siswa',key:'nama',width:30},{header:'NISN',key:'nisn',width:14},{header:'Kelas (X/XI/XII)',key:'kelas',width:14},{header:'JK (L/P)',key:'jk',width:8},{header:'Tempat Lahir',key:'tempat_lahir',width:18},{header:'Tgl Lahir (YYYY-MM-DD)',key:'tgl_lahir',width:18},{header:'Nama Ortu/Wali',key:'ortu',width:25},{header:'Alamat',key:'alamat',width:30}];
+        ws.getRow(1).font={bold:true};
+        const ws2=wb.addWorksheet('Ref Madrasah');
+        ws2.columns=[{header:'NSM',key:'nsm',width:16},{header:'Nama Madrasah',key:'nama',width:35}];
+        ws2.getRow(1).font={bold:true};
+        _data.madrasah.forEach(m=>ws2.addRow({nsm:m._id||m.nsm,nama:m.nama}));
+        const buf=await wb.xlsx.writeBuffer();
+        const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+        const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Template_Siswa_KKMA04.xlsx';a.click();
+    });
+    // Import Excel Siswa
+    $('btnImportSiswa')?.addEventListener('click',()=>{$('inputImportSiswa').click();});
+    $('inputImportSiswa')?.addEventListener('change',async function(){
+        const file=this.files[0];if(!file)return;
+        const wb=new ExcelJS.Workbook();
+        await wb.xlsx.load(await file.arrayBuffer());
+        const ws=wb.worksheets[0];let count=0;
+        ws.eachRow((row,i)=>{
+            if(i===1)return;
+            const nsm=String(row.getCell(1).value||'').trim();
+            const nama=String(row.getCell(2).value||'').trim();
+            if(!nsm||!nama)return;
+            const data={nsm,nama,nisn:String(row.getCell(3).value||'').trim(),kelas:String(row.getCell(4).value||'').trim(),jk:String(row.getCell(5).value||'L').trim(),tempat_lahir:String(row.getCell(6).value||'').trim(),tgl_lahir:String(row.getCell(7).value||'').trim(),ortu:String(row.getCell(8).value||'').trim(),alamat:String(row.getCell(9).value||'').trim()};
+            DB.push('siswa',data);count++;
+        });
+        alert('Import selesai: '+count+' siswa ditambahkan');this.value='';
+    });
 }
 
 function renderSiswaForm(editId){
