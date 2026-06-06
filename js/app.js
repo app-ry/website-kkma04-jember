@@ -523,7 +523,7 @@ function renderTentang(){
     </table>${canEdit()?`<button class="btn btn-sm btn-outline-primary" id="btnEditProfil"><i class="bi bi-pencil me-1"></i>Edit Profil</button>`:''}</div></div>
     <div class="col-md-6"><div class="form-section h-100"><h5>Visi & Misi</h5><p class="fw-bold small">${H(_profil.visi)}</p><h6 class="small">Misi:</h6><ol class="small">${(_profil.misi||[]).map(m=>`<li>${H(m)}</li>`).join('')}</ol>${canEdit()?`<button class="btn btn-sm btn-outline-primary" id="btnEditVisiMisi"><i class="bi bi-pencil me-1"></i>Edit Visi & Misi</button>`:''}</div></div>
     <div class="col-12"><div class="form-section text-center"><h5>Pengawas Pembina</h5>${foto?`<img src="${foto}" class="rounded-circle mb-2" style="width:90px;height:90px;object-fit:cover">`:`<div class="rounded-circle bg-success bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-2" style="width:90px;height:90px"><i class="bi bi-person-fill text-success fs-1"></i></div>`}<p class="fw-bold fs-5 mb-0">${H(_profil.pengawas)}</p><p class="text-muted">NIP. ${H(_profil.nip_pengawas)}<br>${H(_profil.jabatan)}</p>
-    ${canEdit()?`<button class="btn btn-sm btn-outline-primary" id="btnEditSambutan"><i class="bi bi-pencil me-1"></i>Edit Sambutan</button>`:''}</div></div></div>`;
+    ${canEdit()?`<button class="btn btn-sm btn-outline-primary" id="btnEditSambutan"><i class="bi bi-pencil me-1"></i>Edit Sambutan</button> <button class="btn btn-sm btn-outline-success" id="btnFotoTentang"><i class="bi bi-camera me-1"></i>Upload Foto</button><input type="file" id="inputFotoTentang" accept="image/*" style="display:none">`:''}</div></div></div>`;
     // Edit Profil
     $('btnEditProfil')?.addEventListener('click',()=>{
         const nama=prompt('Nama KKMA:',_profil.nama||'');if(!nama)return;
@@ -543,6 +543,28 @@ function renderTentang(){
     $('btnEditSambutan')?.addEventListener('click',()=>{
         const sambutan=prompt('Sambutan Pengawas:',(_profil.sambutan||'').replace(/\n/g,'\\n'));
         if(sambutan!==null) DB.update('profil',{sambutan:sambutan.replace(/\\n/g,'\n')});
+    });
+    // Upload Foto Pengawas
+    $('btnFotoTentang')?.addEventListener('click',()=>{$('inputFotoTentang').click();});
+    $('inputFotoTentang')?.addEventListener('change',function(){
+        const file=this.files[0];if(!file)return;
+        if(file.size>500000){alert('Ukuran foto max 500KB');return;}
+        const reader=new FileReader();
+        reader.onload=function(e){
+            const img=new Image();
+            img.onload=function(){
+                const canvas=document.createElement('canvas');
+                const max=200;
+                let w=img.width,h=img.height;
+                if(w>h){h=h*(max/w);w=max;}else{w=w*(max/h);h=max;}
+                canvas.width=w;canvas.height=h;
+                canvas.getContext('2d').drawImage(img,0,0,w,h);
+                const dataUrl=canvas.toDataURL('image/jpeg',0.8);
+                DB.update('profil',{foto:dataUrl});
+            };
+            img.src=e.target.result;
+        };
+        reader.readAsDataURL(file);
     });
 }
 
