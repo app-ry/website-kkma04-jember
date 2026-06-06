@@ -164,7 +164,7 @@ function renderMadrasah(){
         <h4 class="mb-0"><i class="bi bi-building text-primary me-2"></i>Data Madrasah</h4>
         <div class="d-flex gap-2">
             <div class="search-box"><i class="bi bi-search"></i><input type="text" class="form-control form-control-sm" id="sMdr" placeholder="Cari..."></div>
-            ${canEdit()?`<button class="btn btn-primary btn-sm" onclick="location.hash='#/madrasah-form'"><i class="bi bi-plus-lg"></i></button>`:''}
+            ${canEdit()?`<button class="btn btn-primary btn-sm" onclick="location.hash='#/madrasah-form'"><i class="bi bi-plus-lg"></i></button>`:''}<button class="btn btn-outline-secondary btn-sm" id="btnCetakMdr"><i class="bi bi-printer me-1"></i>Cetak</button>
         </div></div>
     <div class="row g-3" id="mdrGrid">${_data.madrasah.map(m=>`
         <div class="col-md-6 col-lg-4 mdr-item" data-q="${H((m.nama||'').toLowerCase())}">
@@ -183,6 +183,7 @@ function renderMadrasah(){
         </div>`).join('')}</div>`;
     $('sMdr').addEventListener('input',function(){const q=this.value.toLowerCase();document.querySelectorAll('.mdr-item').forEach(el=>{el.style.display=el.dataset.q.includes(q)?'':'none';});});
     document.querySelectorAll('.btnDelMdr').forEach(b=>b.addEventListener('click',function(e){e.stopPropagation();if(confirm('Hapus madrasah ini beserta data guru & siswa terkait?')){const id=this.dataset.id;DB.remove('madrasah/'+id);_data.guru.filter(g=>g.nsm===id).forEach(g=>DB.remove('guru/'+g._id));_data.siswa.filter(s=>s.nsm===id).forEach(s=>DB.remove('siswa/'+s._id));}}));
+    $('btnCetakMdr')?.addEventListener('click',()=>{window.print();});
 }
 
 function renderMadrasahDetail(nsm){
@@ -228,7 +229,7 @@ function renderGuru(){
         <h4 class="mb-0"><i class="bi bi-people text-primary me-2"></i>Data Guru <span class="badge bg-secondary">${_data.guru.length}</span></h4>
         <div class="d-flex gap-2 flex-wrap"><div class="search-box"><i class="bi bi-search"></i><input class="form-control form-control-sm" id="sGuru" placeholder="Cari..."></div>
         <select class="form-select form-select-sm" style="width:auto" id="fGMdr"><option value="">Semua</option>${_data.madrasah.map(m=>`<option value="${m._id||m.nsm}">${H(m.nama)}</option>`).join('')}</select>
-        ${canEdit()?`<a href="#/guru/tambah" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i></a><button class="btn btn-success btn-sm" id="btnTemplateGuru"><i class="bi bi-file-earmark-excel me-1"></i>Template</button><button class="btn btn-warning btn-sm" id="btnImportGuru"><i class="bi bi-upload me-1"></i>Import</button><input type="file" id="inputImportGuru" accept=".xlsx,.xls" style="display:none">`:''}</div></div>
+        ${canEdit()?`<a href="#/guru/tambah" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i></a><button class="btn btn-success btn-sm" id="btnTemplateGuru"><i class="bi bi-file-earmark-excel me-1"></i>Template</button><button class="btn btn-warning btn-sm" id="btnImportGuru"><i class="bi bi-upload me-1"></i>Import</button><input type="file" id="inputImportGuru" accept=".xlsx,.xls" style="display:none">`:''}<button class="btn btn-outline-secondary btn-sm" id="btnCetakGuru"><i class="bi bi-printer me-1"></i>Cetak</button></div></div>
     <div class="form-section"><div class="table-responsive"><table class="table table-sm table-data"><thead><tr><th>No</th><th>Nama</th><th>Madrasah</th><th>Mapel</th><th>Status</th>${canEdit()?'<th>Aksi</th>':''}</tr></thead>
     <tbody id="tGuru">${_data.guru.map((g,i)=>{const m=getMadrasah(g.nsm);return`<tr data-nsm="${g.nsm}" data-q="${H((g.nama||'').toLowerCase())}"><td>${i+1}</td><td><strong>${H(g.nama)}</strong></td><td class="small">${m?H(m.nama):'-'}</td><td>${H(g.mapel||'-')}</td><td><span class="badge ${g.status_kepegawaian==='PNS'?'bg-success':'bg-secondary'}">${H(g.status_kepegawaian||'Non-PNS')}</span></td>${canEdit()?`<td><a href="#/guru/edit/${g._id}" class="btn btn-sm btn-outline-primary py-0 px-1"><i class="bi bi-pencil"></i></a> <button class="btn btn-sm btn-outline-danger py-0 px-1 dGuru" data-id="${g._id}"><i class="bi bi-trash"></i></button></td>`:''}</tr>`;}).join('')}</tbody></table></div>
     ${!_data.guru.length?'<p class="text-center text-muted">Belum ada data guru</p>':''}</div>`;
@@ -236,6 +237,7 @@ function renderGuru(){
     function fil(){const q=(sEl?.value||'').toLowerCase(),n=fEl?.value||'';document.querySelectorAll('#tGuru tr').forEach(r=>{r.style.display=(r.dataset.q.includes(q)&&(!n||r.dataset.nsm===n))?'':'none';});}
     sEl?.addEventListener('input',fil);fEl?.addEventListener('change',fil);
     document.querySelectorAll('.dGuru').forEach(b=>b.addEventListener('click',function(){if(confirm('Hapus guru ini?'))DB.remove('guru/'+this.dataset.id);}));
+    $('btnCetakGuru')?.addEventListener('click',()=>{window.print();});
     // Template Excel Guru
     $('btnTemplateGuru')?.addEventListener('click',async()=>{
         const wb=new ExcelJS.Workbook();
@@ -299,7 +301,7 @@ function renderSiswa(){
     app.innerHTML=`<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
         <h4 class="mb-0"><i class="bi bi-mortarboard text-primary me-2"></i>Data Siswa <span class="badge bg-secondary">${_data.siswa.length}</span></h4>
         <div class="d-flex gap-2 flex-wrap"><div class="search-box"><i class="bi bi-search"></i><input class="form-control form-control-sm" id="sSiswa" placeholder="Cari..."></div>
-        ${canEdit()?`<a href="#/siswa/tambah" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i></a><button class="btn btn-success btn-sm" id="btnTemplateSiswa"><i class="bi bi-file-earmark-excel me-1"></i>Template</button><button class="btn btn-warning btn-sm" id="btnImportSiswa"><i class="bi bi-upload me-1"></i>Import</button><input type="file" id="inputImportSiswa" accept=".xlsx,.xls" style="display:none">`:''}</div></div>
+        ${canEdit()?`<a href="#/siswa/tambah" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i></a><button class="btn btn-success btn-sm" id="btnTemplateSiswa"><i class="bi bi-file-earmark-excel me-1"></i>Template</button><button class="btn btn-warning btn-sm" id="btnImportSiswa"><i class="bi bi-upload me-1"></i>Import</button><input type="file" id="inputImportSiswa" accept=".xlsx,.xls" style="display:none">`:''}<button class="btn btn-outline-secondary btn-sm" id="btnCetakSiswa"><i class="bi bi-printer me-1"></i>Cetak</button></div></div>
     <div class="form-section mb-4"><h5 class="mb-3"><i class="bi bi-table text-primary me-2"></i>Rekapitulasi Per Lembaga</h5>
     <div class="table-responsive"><table class="table table-sm table-bordered table-data"><thead><tr><th rowspan="2" class="align-middle text-center">No</th><th rowspan="2" class="align-middle">Madrasah</th><th colspan="2" class="text-center">X</th><th colspan="2" class="text-center">XI</th><th colspan="2" class="text-center">XII</th><th class="text-center">Total</th></tr><tr><th class="text-center">L</th><th class="text-center">P</th><th class="text-center">L</th><th class="text-center">P</th><th class="text-center">L</th><th class="text-center">P</th><th class="text-center">Jml</th></tr></thead>
     <tbody>${rekap.map((r,i)=>`<tr><td class="text-center">${i+1}</td><td class="small">${H(r.nama)}</td><td class="text-center">${r.x_l||'-'}</td><td class="text-center">${r.x_p||'-'}</td><td class="text-center">${r.xi_l||'-'}</td><td class="text-center">${r.xi_p||'-'}</td><td class="text-center">${r.xii_l||'-'}</td><td class="text-center">${r.xii_p||'-'}</td><td class="text-center fw-bold">${r.total||'-'}</td></tr>`).join('')}</tbody>
@@ -342,6 +344,7 @@ function renderSiswa(){
         });
         alert('Import selesai: '+count+' siswa ditambahkan');this.value='';
     });
+    $('btnCetakSiswa')?.addEventListener('click',()=>{window.print();});
 }
 
 function renderSiswaForm(editId){
