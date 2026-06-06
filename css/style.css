@@ -24,7 +24,7 @@ body {
 main { flex: 1; }
 
 .brand-icon { font-size: 1.5rem; }
-.nav-link { font-weight: 500; transition: opacity .2s; }
+.nav-link { font-weight: 400; font-size: .78rem; transition: opacity .2s; white-space: nowrap; }
 .nav-link:hover, .nav-link.active { opacity: 1; color: #fff !important; }
 .nav-link:not(.active) { opacity: .85; }
 .dropdown-menu { border: none; box-shadow: 0 4px 15px rgba(0,0,0,.1); }
