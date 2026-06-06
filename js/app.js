@@ -484,9 +484,11 @@ function renderKontak(){
         <tr><td class="text-muted">Nama</td><td>${H(_profil.pengawas)}</td></tr>
         <tr><td class="text-muted">HP</td><td>${H(_profil.hp||'(belum diisi)')}</td></tr>
         <tr><td class="text-muted">Email</td><td>${H(_profil.email||'(belum diisi)')}</td></tr>
-        <tr><td class="text-muted">Kantor</td><td>${H(_profil.alamat_kantor)}</td></tr>
+        <tr><td class="text-muted">Kantor</td><td>${H(_profil.alamat_kantor||'(belum diisi)')}</td></tr>
+        <tr><td class="text-muted">Link WA</td><td>${_profil.link_wa?`<a href="${H(_profil.link_wa)}" target="_blank">${H(_profil.link_wa)}</a>`:'(belum diisi)'}</td></tr>
         </table>
-        ${_profil.link_wa?`<a href="${H(_profil.link_wa)}" target="_blank" class="btn btn-success btn-sm"><i class="bi bi-whatsapp me-1"></i>Grup WhatsApp</a>`:''}</div>
+        ${_profil.link_wa?`<a href="${H(_profil.link_wa)}" target="_blank" class="btn btn-success btn-sm mb-2"><i class="bi bi-whatsapp me-1"></i>Grup WhatsApp</a><br>`:''}
+        ${canEdit()?`<button class="btn btn-sm btn-outline-primary" id="btnEditKontak"><i class="bi bi-pencil me-1"></i>Edit Info Kontak</button>`:''}</div>
     </div><div class="col-md-7">
         <div class="form-section"><h5 class="mb-3"><i class="bi bi-envelope text-primary me-2"></i>Form Aspirasi / Konsultasi</h5>
         <form id="fAspirasi"><div class="mb-3"><label class="form-label">Nama</label><input class="form-control" name="nama" required></div>
@@ -497,10 +499,19 @@ function renderKontak(){
         ${Session.isAdmin()?`<div class="form-section mt-3"><h6>Aspirasi Masuk (${(_data.aspirasi||[]).length})</h6>${(_data.aspirasi||[]).map(a=>`<div class="border-start border-2 border-primary ps-2 mb-2 small"><strong>${H(a.nama)}</strong> <span class="text-muted">${H(a.madrasah||'')}</span><p class="mb-0">${H(a.pesan)}</p><small class="text-muted">${fmt(a.tanggal)}</small></div>`).join('')||'<p class="text-muted small">Kosong</p>'}</div>`:''}
     </div></div>`;
     $('fAspirasi').addEventListener('submit',e=>{e.preventDefault();const fd=Object.fromEntries(new FormData(e.target));fd.tanggal=new Date().toISOString().slice(0,10);DB.push('aspirasi',fd);e.target.reset();$('aspirasiOk').style.display='block';setTimeout(()=>{$('aspirasiOk').style.display='none';},3000);});
+    // Edit kontak
+    $('btnEditKontak')?.addEventListener('click',()=>{
+        const hp=prompt('No. HP:',_profil.hp||'');
+        const email=prompt('Email:',_profil.email||'');
+        const alamat_kantor=prompt('Alamat Kantor:',_profil.alamat_kantor||'');
+        const link_wa=prompt('Link Grup WhatsApp:',_profil.link_wa||'');
+        DB.update('profil',{hp,email,alamat_kantor,link_wa});
+    });
 }
 
 // ============ TENTANG ============
 function renderTentang(){
+    const foto = _profil.foto || '';
     app.innerHTML=`<div class="hero-section text-center"><h2>Tentang KKMA 04 Jember</h2><p class="mb-0 opacity-75">Kelompok Kerja Madrasah Aliyah — Kecamatan Sukowono</p></div>
     <div class="row g-4"><div class="col-md-6"><div class="form-section h-100"><h5>Profil</h5><table class="table table-sm table-borderless small">
         <tr><td class="text-muted">Nama</td><td><strong>${H(_profil.nama)}</strong></td></tr>
@@ -509,9 +520,30 @@ function renderTentang(){
         <tr><td class="text-muted">Provinsi</td><td>${H(_profil.provinsi)}</td></tr>
         <tr><td class="text-muted">Jenjang</td><td>Madrasah Aliyah</td></tr>
         <tr><td class="text-muted">Jumlah</td><td>${_data.madrasah.length} madrasah</td></tr>
-    </table></div></div>
-    <div class="col-md-6"><div class="form-section h-100"><h5>Visi & Misi</h5><p class="fw-bold small">${H(_profil.visi)}</p><h6 class="small">Misi:</h6><ol class="small">${(_profil.misi||[]).map(m=>`<li>${H(m)}</li>`).join('')}</ol></div></div>
-    <div class="col-12"><div class="form-section text-center"><h5>Pengawas Pembina</h5><div class="rounded-circle bg-success bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-2" style="width:90px;height:90px"><i class="bi bi-person-fill text-success fs-1"></i></div><p class="fw-bold fs-5 mb-0">${H(_profil.pengawas)}</p><p class="text-muted">NIP. ${H(_profil.nip_pengawas)}<br>${H(_profil.jabatan)}</p></div></div></div>`;
+    </table>${canEdit()?`<button class="btn btn-sm btn-outline-primary" id="btnEditProfil"><i class="bi bi-pencil me-1"></i>Edit Profil</button>`:''}</div></div>
+    <div class="col-md-6"><div class="form-section h-100"><h5>Visi & Misi</h5><p class="fw-bold small">${H(_profil.visi)}</p><h6 class="small">Misi:</h6><ol class="small">${(_profil.misi||[]).map(m=>`<li>${H(m)}</li>`).join('')}</ol>${canEdit()?`<button class="btn btn-sm btn-outline-primary" id="btnEditVisiMisi"><i class="bi bi-pencil me-1"></i>Edit Visi & Misi</button>`:''}</div></div>
+    <div class="col-12"><div class="form-section text-center"><h5>Pengawas Pembina</h5>${foto?`<img src="${foto}" class="rounded-circle mb-2" style="width:90px;height:90px;object-fit:cover">`:`<div class="rounded-circle bg-success bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-2" style="width:90px;height:90px"><i class="bi bi-person-fill text-success fs-1"></i></div>`}<p class="fw-bold fs-5 mb-0">${H(_profil.pengawas)}</p><p class="text-muted">NIP. ${H(_profil.nip_pengawas)}<br>${H(_profil.jabatan)}</p>
+    ${canEdit()?`<button class="btn btn-sm btn-outline-primary" id="btnEditSambutan"><i class="bi bi-pencil me-1"></i>Edit Sambutan</button>`:''}</div></div></div>`;
+    // Edit Profil
+    $('btnEditProfil')?.addEventListener('click',()=>{
+        const nama=prompt('Nama KKMA:',_profil.nama||'');if(!nama)return;
+        const wilayah=prompt('Wilayah:',_profil.wilayah||'');
+        const kabupaten=prompt('Kabupaten:',_profil.kabupaten||'');
+        const provinsi=prompt('Provinsi:',_profil.provinsi||'');
+        DB.update('profil',{nama,wilayah,kabupaten,provinsi});
+    });
+    // Edit Visi & Misi
+    $('btnEditVisiMisi')?.addEventListener('click',()=>{
+        const visi=prompt('Visi:',_profil.visi||'');if(!visi)return;
+        const misiStr=prompt('Misi (pisahkan dengan |):',(_profil.misi||[]).join(' | '));
+        const misi=misiStr?misiStr.split('|').map(m=>m.trim()).filter(m=>m):_profil.misi;
+        DB.update('profil',{visi,misi});
+    });
+    // Edit Sambutan
+    $('btnEditSambutan')?.addEventListener('click',()=>{
+        const sambutan=prompt('Sambutan Pengawas:',(_profil.sambutan||'').replace(/\n/g,'\\n'));
+        if(sambutan!==null) DB.update('profil',{sambutan:sambutan.replace(/\\n/g,'\n')});
+    });
 }
 
 // Boot
