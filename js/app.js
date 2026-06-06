@@ -350,17 +350,51 @@ function renderDownload(){
 
 // ============ DIREKTORI ============
 function renderDirektori(){
+    const foto = _profil.foto || '';
     app.innerHTML=`<h4 class="mb-4"><i class="bi bi-person-lines-fill text-primary me-2"></i>Direktori SDM</h4>
     <div class="row g-4"><div class="col-md-5">
         <div class="form-section"><h5 class="mb-3"><i class="bi bi-person-badge text-primary me-2"></i>Pengawas Pembina</h5>
-        <div class="text-center mb-3"><div class="rounded-circle bg-success bg-opacity-10 d-inline-flex align-items-center justify-content-center" style="width:90px;height:90px"><i class="bi bi-person-fill text-success fs-1"></i></div></div>
-        <table class="table table-sm table-borderless small"><tr><td class="text-muted">Nama</td><td><strong>${H(_profil.pengawas)}</strong></td></tr><tr><td class="text-muted">NIP</td><td>${H(_profil.nip_pengawas)}</td></tr><tr><td class="text-muted">Jabatan</td><td>${H(_profil.jabatan)}</td></tr><tr><td class="text-muted">Wilayah</td><td>${H(_profil.wilayah)}</td></tr></table></div>
+        <div class="text-center mb-3">${foto?`<img src="${foto}" class="rounded-circle" style="width:100px;height:100px;object-fit:cover" alt="Foto Pengawas">`:`<div class="rounded-circle bg-success bg-opacity-10 d-inline-flex align-items-center justify-content-center" style="width:100px;height:100px"><i class="bi bi-person-fill text-success fs-1"></i></div>`}</div>
+        <table class="table table-sm table-borderless small"><tr><td class="text-muted">Nama</td><td><strong>${H(_profil.pengawas)}</strong></td></tr><tr><td class="text-muted">NIP</td><td>${H(_profil.nip_pengawas)}</td></tr><tr><td class="text-muted">Jabatan</td><td>${H(_profil.jabatan)}</td></tr><tr><td class="text-muted">Wilayah</td><td>${H(_profil.wilayah)}</td></tr><tr><td class="text-muted">HP</td><td>${H(_profil.hp||'(belum diisi)')}</td></tr><tr><td class="text-muted">Email</td><td>${H(_profil.email||'(belum diisi)')}</td></tr></table>
+        ${canEdit()?`<button class="btn btn-sm btn-outline-primary" id="btnEditPengawas"><i class="bi bi-pencil me-1"></i>Edit Profil</button> <button class="btn btn-sm btn-outline-success" id="btnFotoPengawas"><i class="bi bi-camera me-1"></i>Upload Foto</button><input type="file" id="inputFoto" accept="image/*" style="display:none">`:''}</div>
         <div class="form-section"><h6><i class="bi bi-diagram-3 text-primary me-2"></i>Struktur Organisasi</h6>
         <div class="small"><p class="mb-1"><strong>Ketua Pokjawas:</strong> ${H(_profil.pengawas)}</p><p class="mb-1"><strong>Wilayah Binaan:</strong> KKMA 04 - ${H(_profil.wilayah)}</p><p class="mb-0"><strong>Jumlah Madrasah:</strong> ${_data.madrasah.length} lembaga</p></div></div>
     </div><div class="col-md-7">
         <div class="form-section"><h5 class="mb-3"><i class="bi bi-people text-primary me-2"></i>Kepala Madrasah</h5>
         <div class="table-responsive"><table class="table table-sm table-data"><thead><tr><th>No</th><th>Nama</th><th>Madrasah</th></tr></thead><tbody>${_data.madrasah.map((m,i)=>`<tr><td>${i+1}</td><td>${H(m.kepala)}</td><td class="small">${H(m.nama)}</td></tr>`).join('')}</tbody></table></div></div>
     </div></div>`;
+    // Edit profil pengawas
+    $('btnEditPengawas')?.addEventListener('click',()=>{
+        const nama=prompt('Nama Pengawas:',_profil.pengawas);if(!nama)return;
+        const nip=prompt('NIP:',_profil.nip_pengawas||'');
+        const jabatan=prompt('Jabatan:',_profil.jabatan||'');
+        const hp=prompt('No. HP:',_profil.hp||'');
+        const email=prompt('Email:',_profil.email||'');
+        const wilayah=prompt('Wilayah:',_profil.wilayah||'');
+        DB.update('profil',{pengawas:nama,nip_pengawas:nip,jabatan,hp,email,wilayah});
+    });
+    // Upload foto
+    $('btnFotoPengawas')?.addEventListener('click',()=>{$('inputFoto').click();});
+    $('inputFoto')?.addEventListener('change',function(){
+        const file=this.files[0];if(!file)return;
+        if(file.size>500000){alert('Ukuran foto max 500KB');return;}
+        const reader=new FileReader();
+        reader.onload=function(e){
+            const img=new Image();
+            img.onload=function(){
+                const canvas=document.createElement('canvas');
+                const max=200;
+                let w=img.width,h=img.height;
+                if(w>h){h=h*(max/w);w=max;}else{w=w*(max/h);h=max;}
+                canvas.width=w;canvas.height=h;
+                canvas.getContext('2d').drawImage(img,0,0,w,h);
+                const dataUrl=canvas.toDataURL('image/jpeg',0.8);
+                DB.update('profil',{foto:dataUrl});
+            };
+            img.src=e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
 }
 
 // ============ DASHBOARD ============
