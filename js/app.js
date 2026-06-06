@@ -24,6 +24,9 @@
                 if (params[0]) renderMadrasahDetail(params[0]);
                 else renderMadrasah();
                 break;
+            case '/madrasah-form':
+                renderMadrasahForm(params[0] || null);
+                break;
             case '/guru':
                 if (params[0] === 'tambah') renderGuruForm();
                 else if (params[0] === 'edit' && params[1]) renderGuruForm(params[1]);
@@ -191,19 +194,26 @@
         app.innerHTML = `
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
             <h4 class="mb-0"><i class="bi bi-building text-primary me-2"></i>Data Madrasah</h4>
-            <div class="search-box" style="min-width:250px">
-                <i class="bi bi-search"></i>
-                <input type="text" class="form-control" id="searchMadrasah" placeholder="Cari madrasah...">
+            <div class="d-flex gap-2">
+                <div class="search-box" style="min-width:250px">
+                    <i class="bi bi-search"></i>
+                    <input type="text" class="form-control" id="searchMadrasah" placeholder="Cari madrasah...">
+                </div>
+                <button class="btn btn-primary btn-sm" id="btnTambahMadrasah"><i class="bi bi-plus-lg me-1"></i>Tambah</button>
             </div>
         </div>
         <div class="row g-3" id="madrasahGrid">
             ${KKMA_DATA.madrasah.map((m, i) => `
             <div class="col-md-6 col-lg-4 madrasah-item" data-nama="${escHtml(m.nama.toLowerCase())}">
-                <div class="card madrasah-card h-100" onclick="location.hash='#/madrasah/${m.nsm}'">
-                    <div class="card-header py-2 px-3">
+                <div class="card madrasah-card h-100">
+                    <div class="card-header py-2 px-3 d-flex justify-content-between align-items-center">
                         <small class="opacity-75">NSM: ${m.nsm}</small>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-light btn-sm py-0 px-1 btn-edit-madrasah" data-nsm="${m.nsm}" title="Edit"><i class="bi bi-pencil text-primary"></i></button>
+                            <button class="btn btn-light btn-sm py-0 px-1 btn-hapus-madrasah" data-nsm="${m.nsm}" title="Hapus"><i class="bi bi-trash text-danger"></i></button>
+                        </div>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body" style="cursor:pointer" onclick="location.hash='#/madrasah/${m.nsm}'">
                         <h6 class="card-title mb-2">${escHtml(m.nama)}</h6>
                         <p class="card-text small text-muted mb-1"><i class="bi bi-person me-1"></i>${escHtml(m.kepala)}</p>
                         <p class="card-text small text-muted mb-0"><i class="bi bi-geo-alt me-1"></i>${escHtml(m.alamat)}</p>
@@ -223,6 +233,109 @@
             document.querySelectorAll('.madrasah-item').forEach(el => {
                 el.style.display = el.dataset.nama.includes(q) ? '' : 'none';
             });
+        });
+
+        // Tambah madrasah
+        document.getElementById('btnTambahMadrasah').addEventListener('click', function() {
+            location.hash = '#/madrasah-form';
+        });
+
+        // Edit madrasah
+        app.querySelectorAll('.btn-edit-madrasah').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                location.hash = '#/madrasah-form/' + this.dataset.nsm;
+            });
+        });
+
+        // Hapus madrasah
+        app.querySelectorAll('.btn-hapus-madrasah').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const nsm = this.dataset.nsm;
+                const m = getMadrasahByNsm(nsm);
+                if (confirm('Hapus madrasah "' + m.nama + '"? Data guru & siswa terkait juga akan dihapus.')) {
+                    KKMA_DATA.madrasah = KKMA_DATA.madrasah.filter(x => x.nsm !== nsm);
+                    KKMA_DATA.guru = KKMA_DATA.guru.filter(g => g.nsm !== nsm);
+                    KKMA_DATA.siswa = KKMA_DATA.siswa.filter(s => s.nsm !== nsm);
+                    saveMadrasah(); saveGuru(); saveSiswa();
+                    renderMadrasah();
+                }
+            });
+        });
+    }
+
+    function renderMadrasahForm(nsm) {
+        const isEdit = !!nsm;
+        const m = isEdit ? getMadrasahByNsm(nsm) : null;
+        if (isEdit && !m) { renderNotFound(); return; }
+
+        app.innerHTML = `
+        <a href="#/madrasah" class="btn btn-outline-secondary btn-sm mb-3"><i class="bi bi-arrow-left me-1"></i>Kembali</a>
+        <div class="form-section" style="max-width:700px">
+            <h5 class="mb-4"><i class="bi bi-${isEdit?'pencil':'building'} text-primary me-2"></i>${isEdit ? 'Edit' : 'Tambah'} Madrasah</h5>
+            <form id="formMadrasah">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Nama Madrasah <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="nama" value="${escHtml(m?.nama || '')}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">NSM <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="nsm" value="${escHtml(m?.nsm || '')}" ${isEdit?'readonly':''} required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Kepala Madrasah</label>
+                        <input type="text" class="form-control" name="kepala" value="${escHtml(m?.kepala || '')}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Alamat/Kecamatan</label>
+                        <input type="text" class="form-control" name="alamat" value="${escHtml(m?.alamat || '')}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Telepon</label>
+                        <input type="text" class="form-control" name="telp" value="${escHtml(m?.telp || '')}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" name="email" value="${escHtml(m?.email || '')}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Akreditasi</label>
+                        <select class="form-select" name="akreditasi">
+                            <option value="-" ${(m?.akreditasi||'-')==='-'?'selected':''}>-</option>
+                            <option value="A" ${m?.akreditasi==='A'?'selected':''}>A</option>
+                            <option value="B" ${m?.akreditasi==='B'?'selected':''}>B</option>
+                            <option value="C" ${m?.akreditasi==='C'?'selected':''}>C</option>
+                            <option value="Belum" ${m?.akreditasi==='Belum'?'selected':''}>Belum Akreditasi</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>${isEdit ? 'Simpan Perubahan' : 'Simpan'}</button>
+                </div>
+            </form>
+        </div>`;
+
+        document.getElementById('formMadrasah').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const fd = new FormData(this);
+            const data = Object.fromEntries(fd.entries());
+
+            if (isEdit) {
+                Object.assign(m, data);
+            } else {
+                // Check duplicate NSM
+                if (getMadrasahByNsm(data.nsm)) {
+                    alert('NSM sudah ada! Gunakan NSM yang berbeda.');
+                    return;
+                }
+                data.siswa_l = 0; data.siswa_p = 0;
+                data.guru_total = 0; data.guru_pns = 0; data.guru_non_pns = 0;
+                KKMA_DATA.madrasah.push(data);
+            }
+            saveMadrasah();
+            location.hash = '#/madrasah';
         });
     }
 
@@ -523,7 +636,36 @@
     }
 
     // ============ SISWA ============
+    function buildRekapSiswa() {
+        // Rekap per lembaga
+        const rekapLembaga = KKMA_DATA.madrasah.map(m => {
+            const siswaM = getSiswaByMadrasah(m.nsm);
+            const kX = siswaM.filter(s => s.kelas === 'X');
+            const kXI = siswaM.filter(s => s.kelas === 'XI');
+            const kXII = siswaM.filter(s => s.kelas === 'XII');
+            return {
+                nsm: m.nsm,
+                nama: m.nama,
+                x_l: kX.filter(s=>s.jk==='L').length,
+                x_p: kX.filter(s=>s.jk==='P').length,
+                xi_l: kXI.filter(s=>s.jk==='L').length,
+                xi_p: kXI.filter(s=>s.jk==='P').length,
+                xii_l: kXII.filter(s=>s.jk==='L').length,
+                xii_p: kXII.filter(s=>s.jk==='P').length,
+                total_l: siswaM.filter(s=>s.jk==='L').length,
+                total_p: siswaM.filter(s=>s.jk==='P').length,
+                total: siswaM.length
+            };
+        });
+        return rekapLembaga;
+    }
+
     function renderSiswa() {
+        const rekap = buildRekapSiswa();
+        const grandL = rekap.reduce((s,r)=>s+r.total_l,0);
+        const grandP = rekap.reduce((s,r)=>s+r.total_p,0);
+        const grandTotal = grandL + grandP;
+
         app.innerHTML = `
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
             <h4 class="mb-0"><i class="bi bi-mortarboard text-primary me-2"></i>Data Siswa</h4>
@@ -536,9 +678,65 @@
             </div>
         </div>
 
+        <!-- REKAP SISWA PER LEMBAGA -->
+        <div class="form-section mb-4">
+            <h5 class="mb-3"><i class="bi bi-table text-primary me-2"></i>Rekapitulasi Siswa Per Lembaga</h5>
+            <div class="table-responsive">
+                <table class="table table-sm table-data table-bordered mb-0">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" class="align-middle text-center">No</th>
+                            <th rowspan="2" class="align-middle">Nama Madrasah</th>
+                            <th colspan="2" class="text-center">Kelas X</th>
+                            <th colspan="2" class="text-center">Kelas XI</th>
+                            <th colspan="2" class="text-center">Kelas XII</th>
+                            <th colspan="3" class="text-center">Jumlah</th>
+                        </tr>
+                        <tr>
+                            <th class="text-center">L</th><th class="text-center">P</th>
+                            <th class="text-center">L</th><th class="text-center">P</th>
+                            <th class="text-center">L</th><th class="text-center">P</th>
+                            <th class="text-center">L</th><th class="text-center">P</th><th class="text-center">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rekap.map((r, i) => `
+                        <tr>
+                            <td class="text-center">${i+1}</td>
+                            <td>${escHtml(r.nama)}</td>
+                            <td class="text-center">${r.x_l || '-'}</td>
+                            <td class="text-center">${r.x_p || '-'}</td>
+                            <td class="text-center">${r.xi_l || '-'}</td>
+                            <td class="text-center">${r.xi_p || '-'}</td>
+                            <td class="text-center">${r.xii_l || '-'}</td>
+                            <td class="text-center">${r.xii_p || '-'}</td>
+                            <td class="text-center fw-bold">${r.total_l || '-'}</td>
+                            <td class="text-center fw-bold">${r.total_p || '-'}</td>
+                            <td class="text-center fw-bold">${r.total || '-'}</td>
+                        </tr>`).join('')}
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-success fw-bold">
+                            <td colspan="2" class="text-center">JUMLAH KKMA 04</td>
+                            <td class="text-center">${rekap.reduce((s,r)=>s+r.x_l,0) || '-'}</td>
+                            <td class="text-center">${rekap.reduce((s,r)=>s+r.x_p,0) || '-'}</td>
+                            <td class="text-center">${rekap.reduce((s,r)=>s+r.xi_l,0) || '-'}</td>
+                            <td class="text-center">${rekap.reduce((s,r)=>s+r.xi_p,0) || '-'}</td>
+                            <td class="text-center">${rekap.reduce((s,r)=>s+r.xii_l,0) || '-'}</td>
+                            <td class="text-center">${rekap.reduce((s,r)=>s+r.xii_p,0) || '-'}</td>
+                            <td class="text-center">${grandL || '-'}</td>
+                            <td class="text-center">${grandP || '-'}</td>
+                            <td class="text-center">${grandTotal || '-'}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- DAFTAR SISWA -->
         <div class="form-section">
             <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-                <span class="text-muted small">Total: <strong>${totalSiswa()}</strong> siswa (L: ${totalSiswaL()}, P: ${totalSiswaP()})</span>
+                <h5 class="mb-0"><i class="bi bi-list-ul text-primary me-2"></i>Daftar Siswa</h5>
                 <div class="d-flex gap-2">
                     <select class="form-select form-select-sm" style="width:auto" id="filterMadrasahSiswa">
                         <option value="">Semua Madrasah</option>
@@ -578,7 +776,7 @@
             </div>` : `
             <div class="empty-state">
                 <i class="bi bi-mortarboard"></i>
-                <p>Belum ada data siswa</p>
+                <p>Belum ada data siswa. Rekap di atas akan terisi otomatis setelah data siswa ditambahkan.</p>
                 <a href="#/siswa/tambah" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Tambah Siswa</a>
             </div>`}
         </div>`;
