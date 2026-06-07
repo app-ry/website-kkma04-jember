@@ -14,6 +14,7 @@ const MENUS=[
     {id:'guru',href:'#/guru',icon:'people',label:'Guru'},
     {id:'siswa',href:'#/siswa',icon:'mortarboard',label:'Siswa'},
     {id:'supervisi',href:'#/supervisi',icon:'clipboard-check',label:'Supervisi'},
+    {id:'upload-dokumen',href:'#/upload-dokumen',icon:'cloud-arrow-up',label:'Upload Dokumen'},
     {id:'informasi',href:'#/informasi',icon:'newspaper',label:'Informasi'},
     {id:'download',href:'#/download',icon:'download',label:'Download'},
     {id:'direktori',href:'#/direktori',icon:'person-lines-fill',label:'Direktori'},
@@ -37,14 +38,14 @@ function getRoute(){
     return {path:'/'+( p||''),params:rest};
 }
 
-let _data={madrasah:[],guru:[],siswa:[],berita:[],supervisi:[],laporan:[],dokumen:[],galeri:[],pkkm:[],pkg:[],rapor_mutu:[],aspirasi:[]};
+let _data={madrasah:[],guru:[],siswa:[],berita:[],supervisi:[],laporan:[],dokumen:[],galeri:[],pkkm:[],pkg:[],rapor_mutu:[],aspirasi:[],uploads:[]};
 let _profil={...KKMA.profil};
 let _ready=false;
 
 // Listen to all data
 function initListeners(){
     DB.listen('profil',v=>{if(v)_profil=v;if(_ready)navigate();});
-    ['madrasah','guru','siswa','berita','supervisi','laporan','dokumen','galeri','pkkm','pkg','rapor_mutu','aspirasi'].forEach(k=>{
+    ['madrasah','guru','siswa','berita','supervisi','laporan','dokumen','galeri','pkkm','pkg','rapor_mutu','aspirasi','uploads'].forEach(k=>{
         DB.listen(k,v=>{_data[k]=DB.toArray(v);if(_ready)navigate();});
     });
     // Special: madrasah keyed by nsm
@@ -75,6 +76,7 @@ function navigate(){
         case '/guru':params[0]==='tambah'?renderGuruForm():params[0]==='edit'?renderGuruForm(params[1]):renderGuru();break;
         case '/siswa':params[0]==='tambah'?renderSiswaForm():params[0]==='edit'?renderSiswaForm(params[1]):renderSiswa();break;
         case '/supervisi':renderSupervisi();break;
+        case '/upload-dokumen':renderUploadDokumen();break;
         case '/informasi':renderInformasi();break;
         case '/download':renderDownload();break;
         case '/direktori':renderDirektori();break;
@@ -566,6 +568,257 @@ function renderTentang(){
         };
         reader.readAsDataURL(file);
     });
+}
+
+// ============ UPLOAD DOKUMEN ============
+function renderUploadDokumen(){
+    if(!canEdit()){location.hash='#/login';return;}
+    const user=Session.getUser();
+    const isAdmin=Session.isAdmin();
+
+    // Listen to uploads
+    let uploads=[];
+    DB.get('uploads').then(v=>{
+        uploads=DB.toArray(v)||[];
+        // Operator hanya lihat miliknya sendiri, admin lihat semua
+        if(!isAdmin){
+            uploads=uploads.filter(u=>u.pengirim===user.nama);
+        }
+        uploads.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
+        renderList();
+    });
+
+    const kategoriList=['Dokumen Kurikulum','Dokumen Akreditasi','Data Guru/Siswa','Laporan Bulanan','Proposal/Surat','Bukti Fisik Supervisi','Lainnya'];
+
+    app.innerHTML=`<h4 class="mb-4"><i class="bi bi-cloud-arrow-up text-primary me-2"></i>Upload Dokumen</h4>
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="form-section">
+                <h5 class="mb-3"><i class="bi bi-upload text-primary me-2"></i>Kirim Dokumen</h5>
+                <p class="small text-muted mb-3">Upload dokumen yang diminta Pengawas. Maks 10 MB per file. Format: PDF, Word, Excel, Gambar.</p>
+                <form id="fUpload">
+                    <div class="mb-3">
+                        <label class="form-label">Asal Madrasah <span class="text-danger">*</span></label>
+                        <select class="form-select" name="madrasah" required>
+                            <option value="">-- Pilih Madrasah --</option>
+                            ${_data.madrasah.map(m=>`<option value="${H(m.nama)}">${H(m.nama)}</option>`).join('')}
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Kategori <span class="text-danger">*</span></label>
+                        <select class="form-select" name="kategori" required>
+                            <option value="">-- Pilih Kategori --</option>
+                            ${kategoriList.map(k=>`<option value="${k}">${k}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Keterangan</label>
+                        <input type="text" class="form-control" name="keterangan" placeholder="Jelaskan singkat isi dokumen...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Pilih File <span class="text-danger">*</span></label>
+                        <input type="file" class="form-control" id="inputUpFile" name="file" required
+                            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.zip,.rar">
+                        <small class="text-muted">PDF, Word, Excel, PPT, Gambar, ZIP (maks 10 MB)</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100" id="btnSubmitUpload">
+                        <i class="bi bi-cloud-arrow-up me-1"></i>Upload
+                    </button>
+                </form>
+                <div id="uploadProgress" class="mt-3" style="display:none">
+                    <div class="progress" style="height:6px"><div class="progress-bar bg-success" id="progBar" style="width:0%"></div></div>
+                    <small class="text-muted" id="progText">Mengupload...</small>
+                </div>
+                <div id="uploadOk" class="alert alert-success mt-3 small" style="display:none">
+                    <i class="bi bi-check-circle me-1"></i>Dokumen berhasil diupload!
+                </div>
+                <div id="uploadErr" class="alert alert-danger mt-3 small" style="display:none"></div>
+            </div>
+        </div>
+        <div class="col-lg-7">
+            <div class="form-section">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0"><i class="bi bi-folder2-open text-primary me-2"></i>${isAdmin?'Semua Dokumen Masuk':'Dokumen Saya'}</h5>
+                    <span class="badge bg-secondary" id="uploadCount">0</span>
+                </div>
+                ${isAdmin?`<div class="d-flex gap-2 mb-3 flex-wrap">
+                    <select class="form-select form-select-sm" style="width:auto" id="fUpMdr"><option value="">Semua Madrasah</option>${_data.madrasah.map(m=>`<option value="${H(m.nama)}">${H(m.nama)}</option>`).join('')}</select>
+                    <select class="form-select form-select-sm" style="width:auto" id="fUpKat"><option value="">Semua Kategori</option>${kategoriList.map(k=>`<option value="${k}">${k}</option>`).join('')}</select>
+                </div>`:''}
+                <div id="uploadList"><div class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div></div></div>
+            </div>
+        </div>
+    </div>`;
+
+    function renderList(){
+        const fM=document.getElementById('fUpMdr');
+        const fK=document.getElementById('fUpKat');
+        let filtered=uploads;
+        if(fM&&fM.value) filtered=filtered.filter(u=>u.madrasah===fM.value);
+        if(fK&&fK.value) filtered=filtered.filter(u=>u.kategori===fK.value);
+
+        const el=document.getElementById('uploadList');
+        const cnt=document.getElementById('uploadCount');
+        if(cnt) cnt.textContent=filtered.length;
+
+        if(!filtered.length){
+            el.innerHTML='<div class="text-center py-4 text-muted"><i class="bi bi-inbox" style="font-size:2rem"></i><p class="small mt-2">Belum ada dokumen diupload</p></div>';
+            return;
+        }
+        el.innerHTML=filtered.map(u=>{
+            const tgl=u.timestamp?new Date(u.timestamp).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'-';
+            const icon=getFileIcon(u.filename||'');
+            const size=u.size?formatSize(u.size):'-';
+            return `<div class="border rounded p-3 mb-2 d-flex align-items-start gap-3 upload-item" data-mdr="${H(u.madrasah||'')}" data-kat="${H(u.kategori||'')}">
+                <div class="stat-icon ${icon.bg} flex-shrink-0" style="width:42px;height:42px;font-size:1.1rem"><i class="bi ${icon.icon}"></i></div>
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong class="small">${H(u.filename||'file')}</strong>
+                            <span class="badge bg-primary ms-1">${H(u.kategori||'-')}</span>
+                        </div>
+                        <small class="text-muted text-nowrap">${size}</small>
+                    </div>
+                    <p class="small text-muted mb-1">
+                        <i class="bi bi-building me-1"></i>${H(u.madrasah||'-')}
+                        ${isAdmin?` · <i class="bi bi-person me-1"></i>${H(u.pengirim||'-')}`:''}
+                    </p>
+                    ${u.keterangan?`<p class="small mb-1 fst-italic">${H(u.keterangan)}</p>`:''}
+                    <div class="d-flex gap-2 align-items-center">
+                        <small class="text-muted"><i class="bi bi-clock me-1"></i>${tgl}</small>
+                        ${u.url?`<a href="${H(u.url)}" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2"><i class="bi bi-download me-1"></i>Download</a>`:''}
+                        ${isAdmin?`<button class="btn btn-sm btn-outline-danger py-0 px-2 btnDelUpload" data-id="${u._id}"><i class="bi bi-trash"></i></button>`:''}
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+
+        // Delete buttons
+        document.querySelectorAll('.btnDelUpload').forEach(b=>b.addEventListener('click',function(){
+            if(!confirm('Hapus dokumen ini?'))return;
+            const id=this.dataset.id;
+            const item=uploads.find(u=>u._id===id);
+            // Remove from storage
+            if(item&&item.storagePath){
+                storage.ref(item.storagePath).delete().catch(()=>{});
+            }
+            DB.remove('uploads/'+id);
+            uploads=uploads.filter(u=>u._id!==id);
+            renderList();
+        }));
+    }
+
+    // Filter listeners (admin only)
+    setTimeout(()=>{
+        const fM=document.getElementById('fUpMdr');
+        const fK=document.getElementById('fUpKat');
+        fM?.addEventListener('change',renderList);
+        fK?.addEventListener('change',renderList);
+    },100);
+
+    // Upload form handler
+    $('fUpload').addEventListener('submit',async function(e){
+        e.preventDefault();
+        const fd=new FormData(e.target);
+        const file=document.getElementById('inputUpFile').files[0];
+        if(!file){alert('Pilih file dulu');return;}
+
+        // Validate size (10 MB)
+        if(file.size>10*1024*1024){
+            $('uploadErr').style.display='block';
+            $('uploadErr').textContent='File terlalu besar! Maksimal 10 MB.';
+            return;
+        }
+
+        const madrasah=fd.get('madrasah');
+        const kategori=fd.get('kategori');
+        const keterangan=fd.get('keterangan')||'';
+
+        // Disable button
+        const btn=$('btnSubmitUpload');
+        btn.disabled=true;
+        btn.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span>Mengupload...';
+        $('uploadProgress').style.display='block';
+        $('uploadOk').style.display='none';
+        $('uploadErr').style.display='none';
+
+        try{
+            // Upload to Firebase Storage
+            const ts=Date.now();
+            const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+            const storagePath=`uploads/${madrasah.replace(/[^a-zA-Z0-9]/g,'_')}/${ts}_${safeName}`;
+            const ref=storage.ref(storagePath);
+            const uploadTask=ref.put(file);
+
+            uploadTask.on('state_changed',
+                (snap)=>{
+                    const pct=Math.round((snap.bytesTransferred/snap.totalBytes)*100);
+                    $('progBar').style.width=pct+'%';
+                    $('progText').textContent=`Mengupload... ${pct}%`;
+                },
+                (err)=>{
+                    $('uploadErr').style.display='block';
+                    $('uploadErr').textContent='Gagal upload: '+err.message;
+                    $('uploadProgress').style.display='none';
+                    btn.disabled=false;
+                    btn.innerHTML='<i class="bi bi-cloud-arrow-up me-1"></i>Upload';
+                },
+                async()=>{
+                    // Success - get download URL
+                    const url=await ref.getDownloadURL();
+                    // Save metadata to DB
+                    const meta={
+                        filename:file.name,
+                        madrasah,
+                        kategori,
+                        keterangan,
+                        pengirim:user.nama,
+                        role:user.role,
+                        size:file.size,
+                        type:file.type,
+                        url,
+                        storagePath,
+                        timestamp:ts
+                    };
+                    const newId=await DB.push('uploads',meta);
+                    uploads.unshift({_id:newId,...meta});
+
+                    // Reset form
+                    e.target.reset();
+                    $('uploadProgress').style.display='none';
+                    $('uploadOk').style.display='block';
+                    setTimeout(()=>{$('uploadOk').style.display='none';},4000);
+                    btn.disabled=false;
+                    btn.innerHTML='<i class="bi bi-cloud-arrow-up me-1"></i>Upload';
+                    renderList();
+                }
+            );
+        }catch(err){
+            $('uploadErr').style.display='block';
+            $('uploadErr').textContent='Error: '+err.message;
+            $('uploadProgress').style.display='none';
+            btn.disabled=false;
+            btn.innerHTML='<i class="bi bi-cloud-arrow-up me-1"></i>Upload';
+        }
+    });
+}
+
+function getFileIcon(filename){
+    const ext=(filename.split('.').pop()||'').toLowerCase();
+    if(['pdf'].includes(ext)) return {icon:'bi-file-earmark-pdf text-danger',bg:'bg-danger bg-opacity-10'};
+    if(['doc','docx'].includes(ext)) return {icon:'bi-file-earmark-word text-primary',bg:'bg-primary bg-opacity-10'};
+    if(['xls','xlsx'].includes(ext)) return {icon:'bi-file-earmark-excel text-success',bg:'bg-success bg-opacity-10'};
+    if(['ppt','pptx'].includes(ext)) return {icon:'bi-file-earmark-ppt text-warning',bg:'bg-warning bg-opacity-10'};
+    if(['jpg','jpeg','png','gif','webp'].includes(ext)) return {icon:'bi-file-earmark-image text-info',bg:'bg-info bg-opacity-10'};
+    if(['zip','rar','7z'].includes(ext)) return {icon:'bi-file-earmark-zip text-secondary',bg:'bg-secondary bg-opacity-10'};
+    return {icon:'bi-file-earmark text-muted',bg:'bg-light'};
+}
+
+function formatSize(bytes){
+    if(bytes<1024) return bytes+' B';
+    if(bytes<1024*1024) return (bytes/1024).toFixed(1)+' KB';
+    return (bytes/(1024*1024)).toFixed(1)+' MB';
 }
 
 // Boot
