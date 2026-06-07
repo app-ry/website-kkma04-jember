@@ -8,6 +8,9 @@
 }
 
 .bg-primary, .navbar { background: linear-gradient(135deg, var(--primary), var(--primary-dark)) !important; }
+.navbar .container { max-width: 100%; padding-left: 0.5rem; padding-right: 0.5rem; }
+.navbar-brand { margin-left: 0 !important; padding-left: 0 !important; }
+.navbar-nav { flex-wrap: wrap; }
 .btn-primary { background-color: var(--primary); border-color: var(--primary); }
 .btn-primary:hover { background-color: var(--primary-dark); border-color: var(--primary-dark); }
 .btn-outline-primary { color: var(--primary); border-color: var(--primary); }
@@ -24,7 +27,7 @@ body {
 main { flex: 1; }
 
 .brand-icon { font-size: 1.5rem; }
-.nav-link { font-weight: 400; font-size: .78rem; transition: opacity .2s; white-space: nowrap; }
+.nav-link { font-weight: 400; font-size: .72rem; transition: opacity .2s; white-space: nowrap; padding: .3rem .5rem !important; }
 .nav-link:hover, .nav-link.active { opacity: 1; color: #fff !important; }
 .nav-link:not(.active) { opacity: .85; }
 .dropdown-menu { border: none; box-shadow: 0 4px 15px rgba(0,0,0,.1); }

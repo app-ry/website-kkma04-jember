@@ -1,4 +1,4 @@
-const CACHE = 'kkma04-v2-2026-06-07-r2';
+const CACHE = 'kkma04-v2-2026-06-07-r3';
 const ASSETS = ['./','./index.html','./css/style.css','./js/firebase-config.js','./js/data.js','./js/app.js','./manifest.json'];
 
 self.addEventListener('install', e => {
