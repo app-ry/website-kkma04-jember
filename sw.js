@@ -1,8 +1,9 @@
-const CACHE = 'kkma04-v2-2026-06-07';
+const CACHE = 'kkma04-v2-2026-06-07-r2';
 const ASSETS = ['./','./index.html','./css/style.css','./js/firebase-config.js','./js/data.js','./js/app.js','./manifest.json'];
 
 self.addEventListener('install', e => {
-    e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+    self.skipWaiting();
+    e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
 });
 
 self.addEventListener('activate', e => {
