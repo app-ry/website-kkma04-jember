@@ -762,7 +762,9 @@ function renderUploadDokumen(){
 
                 const resp=await fetch(UPLOAD_SCRIPT_URL,{
                     method:'POST',
-                    body:JSON.stringify(payload)
+                    headers:{'Content-Type':'text/plain;charset=utf-8'},
+                    body:JSON.stringify(payload),
+                    redirect:'follow'
                 });
                 const result=await resp.json();
 
