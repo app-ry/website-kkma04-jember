@@ -571,7 +571,10 @@ function renderTentang(){
 }
 
 
-// ============ UPLOAD DOKUMEN ============
+
+// ============ UPLOAD DOKUMEN (Google Drive via Apps Script) ============
+const UPLOAD_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxFZohRheBJ4ss-HP3BHwtCAJqqes5ZSC7Zt5oVZjQYoqJfO-cLNUaENZFjbL9IbaF43Q/exec';
+
 function renderUploadDokumen(){
     if(!canEdit()){location.hash='#/login';return;}
     const user=Session.getUser();
@@ -594,7 +597,7 @@ function renderUploadDokumen(){
         <div class="col-lg-5">
             <div class="form-section">
                 <h5 class="mb-3"><i class="bi bi-upload text-primary me-2"></i>Kirim Dokumen</h5>
-                <p class="small text-muted mb-3">Upload dokumen yang diminta Pengawas. Maks 5 MB per file. Format: PDF, Word, Excel, Gambar.</p>
+                <p class="small text-muted mb-3">Upload dokumen ke Google Drive Pengawas. Maks 10 MB per file.</p>
                 <form id="fUpload">
                     <div class="mb-3">
                         <label class="form-label">Asal Madrasah <span class="text-danger">*</span></label>
@@ -619,14 +622,18 @@ function renderUploadDokumen(){
                         <label class="form-label">Pilih File <span class="text-danger">*</span></label>
                         <input type="file" class="form-control" id="inputUpFile" name="file" required
                             accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.zip,.rar">
-                        <small class="text-muted">PDF, Word, Excel, PPT, Gambar, ZIP (maks 5 MB)</small>
+                        <small class="text-muted">PDF, Word, Excel, PPT, Gambar, ZIP (maks 10 MB)</small>
                     </div>
                     <button type="submit" class="btn btn-primary w-100" id="btnSubmitUpload">
-                        <i class="bi bi-cloud-arrow-up me-1"></i>Upload
+                        <i class="bi bi-cloud-arrow-up me-1"></i>Upload ke Google Drive
                     </button>
                 </form>
+                <div id="uploadProgress" class="mt-3" style="display:none">
+                    <div class="progress" style="height:6px"><div class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width:100%"></div></div>
+                    <small class="text-muted">Mengirim ke Google Drive...</small>
+                </div>
                 <div id="uploadOk" class="alert alert-success mt-3 small" style="display:none">
-                    <i class="bi bi-check-circle me-1"></i>Dokumen berhasil diupload!
+                    <i class="bi bi-check-circle me-1"></i>Dokumen berhasil diupload ke Google Drive!
                 </div>
                 <div id="uploadErr" class="alert alert-danger mt-3 small" style="display:none"></div>
             </div>
@@ -682,27 +689,17 @@ function renderUploadDokumen(){
                     ${u.keterangan?`<p class="small mb-1 fst-italic">${H(u.keterangan)}</p>`:''}
                     <div class="d-flex gap-2 align-items-center">
                         <small class="text-muted"><i class="bi bi-clock me-1"></i>${tgl}</small>
-                        <button class="btn btn-sm btn-outline-primary py-0 px-2 btnDlUpload" data-id="${u._id}"><i class="bi bi-download me-1"></i>Download</button>
+                        ${u.driveUrl?`<a href="${H(u.driveUrl)}" target="_blank" class="btn btn-sm btn-outline-success py-0 px-2"><i class="bi bi-google me-1"></i>Drive</a>`:''}
+                        ${u.downloadUrl?`<a href="${H(u.downloadUrl)}" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2"><i class="bi bi-download me-1"></i>Download</a>`:''}
                         ${isAdmin?`<button class="btn btn-sm btn-outline-danger py-0 px-2 btnDelUpload" data-id="${u._id}"><i class="bi bi-trash"></i></button>`:''}
                     </div>
                 </div>
             </div>`;
         }).join('');
 
-        // Download buttons
-        document.querySelectorAll('.btnDlUpload').forEach(b=>b.addEventListener('click',function(){
-            const id=this.dataset.id;
-            const item=uploads.find(u=>u._id===id);
-            if(!item||!item.dataUrl){alert('Data file tidak tersedia');return;}
-            const a=document.createElement('a');
-            a.href=item.dataUrl;
-            a.download=item.filename||'file';
-            document.body.appendChild(a);a.click();document.body.removeChild(a);
-        }));
-
-        // Delete buttons
+        // Delete buttons (remove metadata only, file stays in Drive)
         document.querySelectorAll('.btnDelUpload').forEach(b=>b.addEventListener('click',function(){
-            if(!confirm('Hapus dokumen ini?'))return;
+            if(!confirm('Hapus record ini? (File tetap ada di Google Drive)'))return;
             const id=this.dataset.id;
             DB.remove('uploads/'+id);
             uploads=uploads.filter(u=>u._id!==id);
@@ -718,17 +715,16 @@ function renderUploadDokumen(){
         fK?.addEventListener('change',renderList);
     },100);
 
-    // Upload form handler
+    // Upload form handler - send to Google Drive via Apps Script
     $('fUpload').addEventListener('submit',function(e){
         e.preventDefault();
         const fd=new FormData(e.target);
         const file=document.getElementById('inputUpFile').files[0];
         if(!file){alert('Pilih file dulu');return;}
 
-        // Validate size (5 MB)
-        if(file.size>5*1024*1024){
+        if(file.size>10*1024*1024){
             $('uploadErr').style.display='block';
-            $('uploadErr').textContent='File terlalu besar! Maksimal 5 MB.';
+            $('uploadErr').textContent='File terlalu besar! Maksimal 10 MB.';
             return;
         }
 
@@ -736,18 +732,39 @@ function renderUploadDokumen(){
         const kategori=fd.get('kategori');
         const keterangan=fd.get('keterangan')||'';
 
-        // Disable button
         const btn=$('btnSubmitUpload');
         btn.disabled=true;
         btn.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span>Mengupload...';
+        $('uploadProgress').style.display='block';
         $('uploadOk').style.display='none';
         $('uploadErr').style.display='none';
 
-        // Read file as base64 dataUrl
         const reader=new FileReader();
         reader.onload=async function(ev){
             try{
-                const dataUrl=ev.target.result;
+                // Extract pure base64 (remove data:...;base64, prefix)
+                const base64Full=ev.target.result;
+                const base64Data=base64Full.split(',')[1];
+
+                const payload={
+                    filename:file.name,
+                    fileData:base64Data,
+                    mimeType:file.type,
+                    madrasah,
+                    kategori,
+                    keterangan,
+                    pengirim:user.nama
+                };
+
+                const resp=await fetch(UPLOAD_SCRIPT_URL,{
+                    method:'POST',
+                    body:JSON.stringify(payload)
+                });
+                const result=await resp.json();
+
+                if(!result.success) throw new Error(result.error||'Upload gagal');
+
+                // Save metadata to Firebase DB (tanpa file content)
                 const ts=Date.now();
                 const meta={
                     filename:file.name,
@@ -758,31 +775,35 @@ function renderUploadDokumen(){
                     role:user.role,
                     size:file.size,
                     type:file.type,
-                    dataUrl,
+                    driveUrl:result.url||'',
+                    downloadUrl:result.downloadUrl||'',
+                    fileId:result.fileId||'',
                     timestamp:ts
                 };
                 const newId=await DB.push('uploads',meta);
                 uploads.unshift({_id:newId,...meta});
 
-                // Reset form
                 e.target.reset();
+                $('uploadProgress').style.display='none';
                 $('uploadOk').style.display='block';
-                setTimeout(()=>{$('uploadOk').style.display='none';},4000);
+                setTimeout(()=>{$('uploadOk').style.display='none';},5000);
                 btn.disabled=false;
-                btn.innerHTML='<i class="bi bi-cloud-arrow-up me-1"></i>Upload';
+                btn.innerHTML='<i class="bi bi-cloud-arrow-up me-1"></i>Upload ke Google Drive';
                 renderList();
             }catch(err){
                 $('uploadErr').style.display='block';
                 $('uploadErr').textContent='Gagal upload: '+err.message;
+                $('uploadProgress').style.display='none';
                 btn.disabled=false;
-                btn.innerHTML='<i class="bi bi-cloud-arrow-up me-1"></i>Upload';
+                btn.innerHTML='<i class="bi bi-cloud-arrow-up me-1"></i>Upload ke Google Drive';
             }
         };
         reader.onerror=function(){
             $('uploadErr').style.display='block';
             $('uploadErr').textContent='Gagal membaca file';
+            $('uploadProgress').style.display='none';
             btn.disabled=false;
-            btn.innerHTML='<i class="bi bi-cloud-arrow-up me-1"></i>Upload';
+            btn.innerHTML='<i class="bi bi-cloud-arrow-up me-1"></i>Upload ke Google Drive';
         };
         reader.readAsDataURL(file);
     });
