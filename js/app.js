@@ -25,9 +25,13 @@ const MENUS=[
 
 function renderNav(){
     const nl=$('navLinks');
-    nl.innerHTML=MENUS.map(m=>`<li class="nav-item"><a class="nav-link" href="${m.href}" data-nav="${m.id}"><i class="bi bi-${m.icon} me-1"></i>${m.label}</a></li>`).join('');
     const u=Session.getUser();
-    $('navUser').innerHTML=u?`<span class="badge bg-light text-dark me-2"><i class="bi bi-person-circle me-1"></i>${H(u.nama)} (${u.role})</span><button class="btn btn-sm btn-outline-light" onclick="Session.logout()">Logout</button>`
+    let menuHtml=MENUS.map(m=>`<li class="nav-item"><a class="nav-link" href="${m.href}" data-nav="${m.id}"><i class="bi bi-${m.icon} me-1"></i>${m.label}</a></li>`).join('');
+    if(u){
+        menuHtml+=`<li class="nav-item"><a class="nav-link text-warning" href="#" onclick="Session.logout();return false;"><i class="bi bi-box-arrow-right me-1"></i>Logout</a></li>`;
+    }
+    nl.innerHTML=menuHtml;
+    $('navUser').innerHTML=u?`<span class="badge bg-light text-dark"><i class="bi bi-person-circle me-1"></i>${H(u.nama)} (${u.role})</span>`
         :`<a href="#/login" class="btn btn-sm btn-outline-light"><i class="bi bi-box-arrow-in-right me-1"></i>Login</a>`;
 }
 
