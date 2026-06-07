@@ -11,4 +11,3 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 window.db = firebase.database();
-window.storage = firebase.storage();

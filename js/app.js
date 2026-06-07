@@ -1,4 +1,4 @@
-// KKMA 04 Jember - App v2.0 (Firebase multi-user)
+﻿// KKMA 04 Jember - App v2.0 (Firebase multi-user)
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
@@ -122,7 +122,7 @@ function renderBeranda(){
     <div class="hero-section text-center">
         <h1><i class="bi bi-building"></i> KKMA 04 Jember</h1>
         <p class="lead mb-1">Kelompok Kerja Madrasah Aliyah</p>
-        <p class="mb-0 opacity-75">Kecamatan Sukowono — Kabupaten Jember — Jawa Timur</p>
+        <p class="mb-0 opacity-75">Kecamatan Sukowono â€” Kabupaten Jember â€” Jawa Timur</p>
     </div>
     <div class="row g-3 mb-4">
         <div class="col-6 col-md-3"><div class="card stat-card h-100"><div class="card-body d-flex align-items-center gap-3"><div class="stat-icon bg-success bg-opacity-10 text-success"><i class="bi bi-building"></i></div><div><div class="fw-bold fs-4">${_data.madrasah.length}</div><small class="text-muted">Madrasah</small></div></div></div></div>
@@ -135,14 +135,14 @@ function renderBeranda(){
             <div class="form-section sambutan-card">
                 <h5 class="mb-3"><i class="bi bi-chat-quote text-primary me-2"></i>Sambutan Pengawas Pembina</h5>
                 <p class="small" style="white-space:pre-line">${H(_profil.sambutan)}</p>
-                <p class="fw-bold mb-0 small text-end">— ${H(_profil.pengawas)}</p>
+                <p class="fw-bold mb-0 small text-end">â€” ${H(_profil.pengawas)}</p>
             </div>
             <div class="form-section">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="mb-0"><i class="bi bi-newspaper text-primary me-2"></i>Berita Terbaru</h5>
-                    <a href="#/informasi" class="btn btn-sm btn-outline-primary">Semua →</a>
+                    <a href="#/informasi" class="btn btn-sm btn-outline-primary">Semua â†’</a>
                 </div>
-                ${berita.length?berita.map(b=>`<div class="berita-card p-3 mb-2 bg-light rounded"><h6 class="mb-1">${H(b.judul)}</h6><small class="text-muted"><i class="bi bi-calendar me-1"></i>${fmt(b.tanggal)} · ${H(b.kategori||'')}</small><p class="small mt-1 mb-0 text-truncate">${H(b.isi)}</p></div>`).join(''):'<p class="text-muted small">Belum ada berita.</p>'}
+                ${berita.length?berita.map(b=>`<div class="berita-card p-3 mb-2 bg-light rounded"><h6 class="mb-1">${H(b.judul)}</h6><small class="text-muted"><i class="bi bi-calendar me-1"></i>${fmt(b.tanggal)} Â· ${H(b.kategori||'')}</small><p class="small mt-1 mb-0 text-truncate">${H(b.isi)}</p></div>`).join(''):'<p class="text-muted small">Belum ada berita.</p>'}
             </div>
         </div>
         <div class="col-lg-5">
@@ -180,7 +180,7 @@ function renderMadrasah(){
                     <p class="small text-muted mb-1"><i class="bi bi-person me-1"></i>${H(m.kepala)}</p>
                     <p class="small text-muted mb-0"><i class="bi bi-geo-alt me-1"></i>${H(m.alamat)}</p>
                 </div>
-                <div class="card-footer bg-transparent small text-muted">${guruByNsm(m._id||m.nsm).length} guru · ${siswaByNsm(m._id||m.nsm).length} siswa</div>
+                <div class="card-footer bg-transparent small text-muted">${guruByNsm(m._id||m.nsm).length} guru Â· ${siswaByNsm(m._id||m.nsm).length} siswa</div>
             </div>
         </div>`).join('')}</div>`;
     $('sMdr').addEventListener('input',function(){const q=this.value.toLowerCase();document.querySelectorAll('.mdr-item').forEach(el=>{el.style.display=el.dataset.q.includes(q)?'':'none';});});
@@ -395,7 +395,7 @@ function renderInformasi(){
     const berita=(_data.berita||[]).sort((a,b)=>(b.tanggal||'').localeCompare(a.tanggal||''));
     app.innerHTML=`<h4 class="mb-4"><i class="bi bi-newspaper text-primary me-2"></i>Informasi & Dokumentasi</h4>
     ${canEdit()?`<button class="btn btn-primary btn-sm mb-3" id="btnAddBerita"><i class="bi bi-plus-lg me-1"></i>Tambah Berita</button>`:''}
-    <div class="row g-3">${berita.map(b=>`<div class="col-md-6"><div class="form-section berita-card"><h6>${H(b.judul)}</h6><small class="text-muted"><i class="bi bi-calendar me-1"></i>${fmt(b.tanggal)} · <span class="badge bg-primary">${H(b.kategori||'Lainnya')}</span></small><p class="small mt-2 mb-0">${H(b.isi)}</p>${canEdit()?`<button class="btn btn-sm btn-outline-danger mt-2 dBerita" data-id="${b._id}"><i class="bi bi-trash"></i></button>`:''}</div></div>`).join('')}</div>
+    <div class="row g-3">${berita.map(b=>`<div class="col-md-6"><div class="form-section berita-card"><h6>${H(b.judul)}</h6><small class="text-muted"><i class="bi bi-calendar me-1"></i>${fmt(b.tanggal)} Â· <span class="badge bg-primary">${H(b.kategori||'Lainnya')}</span></small><p class="small mt-2 mb-0">${H(b.isi)}</p>${canEdit()?`<button class="btn btn-sm btn-outline-danger mt-2 dBerita" data-id="${b._id}"><i class="bi bi-trash"></i></button>`:''}</div></div>`).join('')}</div>
     ${!berita.length?'<div class="form-section"><p class="text-center text-muted">Belum ada berita</p></div>':''}`;
     $('btnAddBerita')?.addEventListener('click',()=>{const judul=prompt('Judul:');const isi=prompt('Isi berita:');const kategori=prompt('Kategori (KKG/MGMP/Workshop/Rapat/Lainnya):','Lainnya');const tgl=new Date().toISOString().slice(0,10);if(judul&&isi)DB.push('berita',{judul,isi,kategori,tanggal:tgl});});
     document.querySelectorAll('.dBerita').forEach(b=>b.addEventListener('click',function(){if(confirm('Hapus?'))DB.remove('berita/'+this.dataset.id);}));
@@ -514,7 +514,7 @@ function renderKontak(){
 // ============ TENTANG ============
 function renderTentang(){
     const foto = _profil.foto || '';
-    app.innerHTML=`<div class="hero-section text-center"><h2>Tentang KKMA 04 Jember</h2><p class="mb-0 opacity-75">Kelompok Kerja Madrasah Aliyah — Kecamatan Sukowono</p></div>
+    app.innerHTML=`<div class="hero-section text-center"><h2>Tentang KKMA 04 Jember</h2><p class="mb-0 opacity-75">Kelompok Kerja Madrasah Aliyah â€” Kecamatan Sukowono</p></div>
     <div class="row g-4"><div class="col-md-6"><div class="form-section h-100"><h5>Profil</h5><table class="table table-sm table-borderless small">
         <tr><td class="text-muted">Nama</td><td><strong>${H(_profil.nama)}</strong></td></tr>
         <tr><td class="text-muted">Wilayah</td><td>${H(_profil.wilayah)}</td></tr>
@@ -570,17 +570,16 @@ function renderTentang(){
     });
 }
 
+
 // ============ UPLOAD DOKUMEN ============
 function renderUploadDokumen(){
     if(!canEdit()){location.hash='#/login';return;}
     const user=Session.getUser();
     const isAdmin=Session.isAdmin();
 
-    // Listen to uploads
     let uploads=[];
     DB.get('uploads').then(v=>{
         uploads=DB.toArray(v)||[];
-        // Operator hanya lihat miliknya sendiri, admin lihat semua
         if(!isAdmin){
             uploads=uploads.filter(u=>u.pengirim===user.nama);
         }
@@ -595,7 +594,7 @@ function renderUploadDokumen(){
         <div class="col-lg-5">
             <div class="form-section">
                 <h5 class="mb-3"><i class="bi bi-upload text-primary me-2"></i>Kirim Dokumen</h5>
-                <p class="small text-muted mb-3">Upload dokumen yang diminta Pengawas. Maks 10 MB per file. Format: PDF, Word, Excel, Gambar.</p>
+                <p class="small text-muted mb-3">Upload dokumen yang diminta Pengawas. Maks 5 MB per file. Format: PDF, Word, Excel, Gambar.</p>
                 <form id="fUpload">
                     <div class="mb-3">
                         <label class="form-label">Asal Madrasah <span class="text-danger">*</span></label>
@@ -620,16 +619,12 @@ function renderUploadDokumen(){
                         <label class="form-label">Pilih File <span class="text-danger">*</span></label>
                         <input type="file" class="form-control" id="inputUpFile" name="file" required
                             accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.zip,.rar">
-                        <small class="text-muted">PDF, Word, Excel, PPT, Gambar, ZIP (maks 10 MB)</small>
+                        <small class="text-muted">PDF, Word, Excel, PPT, Gambar, ZIP (maks 5 MB)</small>
                     </div>
                     <button type="submit" class="btn btn-primary w-100" id="btnSubmitUpload">
                         <i class="bi bi-cloud-arrow-up me-1"></i>Upload
                     </button>
                 </form>
-                <div id="uploadProgress" class="mt-3" style="display:none">
-                    <div class="progress" style="height:6px"><div class="progress-bar bg-success" id="progBar" style="width:0%"></div></div>
-                    <small class="text-muted" id="progText">Mengupload...</small>
-                </div>
                 <div id="uploadOk" class="alert alert-success mt-3 small" style="display:none">
                     <i class="bi bi-check-circle me-1"></i>Dokumen berhasil diupload!
                 </div>
@@ -670,7 +665,7 @@ function renderUploadDokumen(){
             const tgl=u.timestamp?new Date(u.timestamp).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'-';
             const icon=getFileIcon(u.filename||'');
             const size=u.size?formatSize(u.size):'-';
-            return `<div class="border rounded p-3 mb-2 d-flex align-items-start gap-3 upload-item" data-mdr="${H(u.madrasah||'')}" data-kat="${H(u.kategori||'')}">
+            return `<div class="border rounded p-3 mb-2 d-flex align-items-start gap-3">
                 <div class="stat-icon ${icon.bg} flex-shrink-0" style="width:42px;height:42px;font-size:1.1rem"><i class="bi ${icon.icon}"></i></div>
                 <div class="flex-grow-1">
                     <div class="d-flex justify-content-between align-items-start">
@@ -682,27 +677,33 @@ function renderUploadDokumen(){
                     </div>
                     <p class="small text-muted mb-1">
                         <i class="bi bi-building me-1"></i>${H(u.madrasah||'-')}
-                        ${isAdmin?` · <i class="bi bi-person me-1"></i>${H(u.pengirim||'-')}`:''}
+                        ${isAdmin?` \u00b7 <i class="bi bi-person me-1"></i>${H(u.pengirim||'-')}`:''}
                     </p>
                     ${u.keterangan?`<p class="small mb-1 fst-italic">${H(u.keterangan)}</p>`:''}
                     <div class="d-flex gap-2 align-items-center">
                         <small class="text-muted"><i class="bi bi-clock me-1"></i>${tgl}</small>
-                        ${u.url?`<a href="${H(u.url)}" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2"><i class="bi bi-download me-1"></i>Download</a>`:''}
+                        <button class="btn btn-sm btn-outline-primary py-0 px-2 btnDlUpload" data-id="${u._id}"><i class="bi bi-download me-1"></i>Download</button>
                         ${isAdmin?`<button class="btn btn-sm btn-outline-danger py-0 px-2 btnDelUpload" data-id="${u._id}"><i class="bi bi-trash"></i></button>`:''}
                     </div>
                 </div>
             </div>`;
         }).join('');
 
+        // Download buttons
+        document.querySelectorAll('.btnDlUpload').forEach(b=>b.addEventListener('click',function(){
+            const id=this.dataset.id;
+            const item=uploads.find(u=>u._id===id);
+            if(!item||!item.dataUrl){alert('Data file tidak tersedia');return;}
+            const a=document.createElement('a');
+            a.href=item.dataUrl;
+            a.download=item.filename||'file';
+            document.body.appendChild(a);a.click();document.body.removeChild(a);
+        }));
+
         // Delete buttons
         document.querySelectorAll('.btnDelUpload').forEach(b=>b.addEventListener('click',function(){
             if(!confirm('Hapus dokumen ini?'))return;
             const id=this.dataset.id;
-            const item=uploads.find(u=>u._id===id);
-            // Remove from storage
-            if(item&&item.storagePath){
-                storage.ref(item.storagePath).delete().catch(()=>{});
-            }
             DB.remove('uploads/'+id);
             uploads=uploads.filter(u=>u._id!==id);
             renderList();
@@ -718,16 +719,16 @@ function renderUploadDokumen(){
     },100);
 
     // Upload form handler
-    $('fUpload').addEventListener('submit',async function(e){
+    $('fUpload').addEventListener('submit',function(e){
         e.preventDefault();
         const fd=new FormData(e.target);
         const file=document.getElementById('inputUpFile').files[0];
         if(!file){alert('Pilih file dulu');return;}
 
-        // Validate size (10 MB)
-        if(file.size>10*1024*1024){
+        // Validate size (5 MB)
+        if(file.size>5*1024*1024){
             $('uploadErr').style.display='block';
-            $('uploadErr').textContent='File terlalu besar! Maksimal 10 MB.';
+            $('uploadErr').textContent='File terlalu besar! Maksimal 5 MB.';
             return;
         }
 
@@ -739,68 +740,51 @@ function renderUploadDokumen(){
         const btn=$('btnSubmitUpload');
         btn.disabled=true;
         btn.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span>Mengupload...';
-        $('uploadProgress').style.display='block';
         $('uploadOk').style.display='none';
         $('uploadErr').style.display='none';
 
-        try{
-            // Upload to Firebase Storage
-            const ts=Date.now();
-            const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
-            const storagePath=`uploads/${madrasah.replace(/[^a-zA-Z0-9]/g,'_')}/${ts}_${safeName}`;
-            const ref=storage.ref(storagePath);
-            const uploadTask=ref.put(file);
+        // Read file as base64 dataUrl
+        const reader=new FileReader();
+        reader.onload=async function(ev){
+            try{
+                const dataUrl=ev.target.result;
+                const ts=Date.now();
+                const meta={
+                    filename:file.name,
+                    madrasah,
+                    kategori,
+                    keterangan,
+                    pengirim:user.nama,
+                    role:user.role,
+                    size:file.size,
+                    type:file.type,
+                    dataUrl,
+                    timestamp:ts
+                };
+                const newId=await DB.push('uploads',meta);
+                uploads.unshift({_id:newId,...meta});
 
-            uploadTask.on('state_changed',
-                (snap)=>{
-                    const pct=Math.round((snap.bytesTransferred/snap.totalBytes)*100);
-                    $('progBar').style.width=pct+'%';
-                    $('progText').textContent=`Mengupload... ${pct}%`;
-                },
-                (err)=>{
-                    $('uploadErr').style.display='block';
-                    $('uploadErr').textContent='Gagal upload: '+err.message;
-                    $('uploadProgress').style.display='none';
-                    btn.disabled=false;
-                    btn.innerHTML='<i class="bi bi-cloud-arrow-up me-1"></i>Upload';
-                },
-                async()=>{
-                    // Success - get download URL
-                    const url=await ref.getDownloadURL();
-                    // Save metadata to DB
-                    const meta={
-                        filename:file.name,
-                        madrasah,
-                        kategori,
-                        keterangan,
-                        pengirim:user.nama,
-                        role:user.role,
-                        size:file.size,
-                        type:file.type,
-                        url,
-                        storagePath,
-                        timestamp:ts
-                    };
-                    const newId=await DB.push('uploads',meta);
-                    uploads.unshift({_id:newId,...meta});
-
-                    // Reset form
-                    e.target.reset();
-                    $('uploadProgress').style.display='none';
-                    $('uploadOk').style.display='block';
-                    setTimeout(()=>{$('uploadOk').style.display='none';},4000);
-                    btn.disabled=false;
-                    btn.innerHTML='<i class="bi bi-cloud-arrow-up me-1"></i>Upload';
-                    renderList();
-                }
-            );
-        }catch(err){
+                // Reset form
+                e.target.reset();
+                $('uploadOk').style.display='block';
+                setTimeout(()=>{$('uploadOk').style.display='none';},4000);
+                btn.disabled=false;
+                btn.innerHTML='<i class="bi bi-cloud-arrow-up me-1"></i>Upload';
+                renderList();
+            }catch(err){
+                $('uploadErr').style.display='block';
+                $('uploadErr').textContent='Gagal upload: '+err.message;
+                btn.disabled=false;
+                btn.innerHTML='<i class="bi bi-cloud-arrow-up me-1"></i>Upload';
+            }
+        };
+        reader.onerror=function(){
             $('uploadErr').style.display='block';
-            $('uploadErr').textContent='Error: '+err.message;
-            $('uploadProgress').style.display='none';
+            $('uploadErr').textContent='Gagal membaca file';
             btn.disabled=false;
             btn.innerHTML='<i class="bi bi-cloud-arrow-up me-1"></i>Upload';
-        }
+        };
+        reader.readAsDataURL(file);
     });
 }
 
