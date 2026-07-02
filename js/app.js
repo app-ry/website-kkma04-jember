@@ -13,6 +13,7 @@ const MENUS=[
     {id:'madrasah',href:'#/madrasah',icon:'building',label:'Madrasah'},
     {id:'guru',href:'#/guru',icon:'people',label:'Guru'},
     {id:'siswa',href:'#/siswa',icon:'mortarboard',label:'Siswa'},
+    {id:'rekap-siswa',href:'#/rekap-siswa',icon:'clipboard2-data',label:'Rekap Data Siswa'},
     {id:'supervisi',href:'#/supervisi',icon:'clipboard-check',label:'Supervisi'},
     {id:'upload-dokumen',href:'#/upload-dokumen',icon:'cloud-arrow-up',label:'Upload Dokumen'},
     {id:'informasi',href:'#/informasi',icon:'newspaper',label:'Informasi'},
@@ -42,14 +43,14 @@ function getRoute(){
     return {path:'/'+( p||''),params:rest};
 }
 
-let _data={madrasah:[],guru:[],siswa:[],berita:[],supervisi:[],laporan:[],dokumen:[],galeri:[],pkkm:[],pkg:[],rapor_mutu:[],aspirasi:[],uploads:[]};
+let _data={madrasah:[],guru:[],siswa:[],berita:[],supervisi:[],laporan:[],dokumen:[],galeri:[],pkkm:[],pkg:[],rapor_mutu:[],aspirasi:[],uploads:[],rekap_siswa:{}};
 let _profil={...KKMA.profil};
 let _ready=false;
 
 // Listen to all data
 function initListeners(){
     DB.listen('profil',v=>{if(v)_profil=v;if(_ready)navigate();});
-    ['madrasah','guru','siswa','berita','supervisi','laporan','dokumen','galeri','pkkm','pkg','rapor_mutu','aspirasi','uploads'].forEach(k=>{
+    ['madrasah','guru','siswa','berita','supervisi','laporan','dokumen','galeri','pkkm','pkg','rapor_mutu','aspirasi','uploads','rekap_siswa'].forEach(k=>{
         DB.listen(k,v=>{_data[k]=DB.toArray(v);if(_ready)navigate();});
     });
     // Special: madrasah keyed by nsm
@@ -79,6 +80,7 @@ function navigate(){
         case '/madrasah-form':renderMadrasahForm(params[0]);break;
         case '/guru':params[0]==='tambah'?renderGuruForm():params[0]==='edit'?renderGuruForm(params[1]):renderGuru();break;
         case '/siswa':params[0]==='tambah'?renderSiswaForm():params[0]==='edit'?renderSiswaForm(params[1]):renderSiswa();break;
+        case '/rekap-siswa':renderRekapSiswa();break;
         case '/supervisi':renderSupervisi();break;
         case '/upload-dokumen':renderUploadDokumen();break;
         case '/informasi':renderInformasi();break;
@@ -371,6 +373,210 @@ function renderSiswaForm(editId){
         <div class="col-md-6"><label class="form-label">Alamat</label><input class="form-control" name="alamat" value="${H(s?.alamat||'')}"></div>
     </div><button type="submit" class="btn btn-primary mt-3">Simpan</button></form></div>`;
     $('fSiswa').addEventListener('submit',e=>{e.preventDefault();const fd=Object.fromEntries(new FormData(e.target));if(s){DB.update('siswa/'+s._id,fd);}else{DB.push('siswa',fd);}location.hash='#/siswa';});
+}
+
+// ============ REKAP DATA SISWA ============
+function renderRekapSiswa(){
+    const rs = _data.rekap_siswa || {};
+    const kelasList = ['10','11','12'];
+    const tahunAjaran = rs._tahun_ajaran || new Date().getFullYear()+'/'+(new Date().getFullYear()+1);
+
+    // Grand totals
+    let grandL=0, grandP=0, grandTotal=0;
+    const perMadrasah = _data.madrasah.map(m=>{
+        const nsm = m._id||m.nsm;
+        const d = rs[nsm] || {};
+        let mL=0, mP=0;
+        kelasList.forEach(k=>{
+            mL += parseInt(d['k'+k+'_l']||0)||0;
+            mP += parseInt(d['k'+k+'_p']||0)||0;
+        });
+        grandL+=mL; grandP+=mP; grandTotal+=mL+mP;
+        return {nsm, nama:m.nama, data:d, totalL:mL, totalP:mP, total:mL+mP};
+    });
+
+    app.innerHTML=`
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <h4 class="mb-0"><i class="bi bi-clipboard2-data text-primary me-2"></i>Rekap Data Siswa</h4>
+        <div class="d-flex gap-2 align-items-center">
+            <small class="text-muted">Tahun Ajaran:</small>
+            <input type="text" class="form-control form-control-sm" style="width:120px" id="rekapTA" value="${H(tahunAjaran)}">
+            ${canEdit()?`<button class="btn btn-success btn-sm" id="btnSimpanRekap"><i class="bi bi-save me-1"></i>Simpan Semua</button>`:''}
+            <button class="btn btn-outline-secondary btn-sm" id="btnCetakRekap"><i class="bi bi-printer me-1"></i>Cetak</button>
+        </div>
+    </div>
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3"><div class="card stat-card h-100"><div class="card-body text-center"><div class="fw-bold fs-4 text-primary">${_data.madrasah.length}</div><small class="text-muted">Madrasah</small></div></div></div>
+        <div class="col-6 col-md-3"><div class="card stat-card h-100"><div class="card-body text-center"><div class="fw-bold fs-4 text-info">${grandL}</div><small class="text-muted">Siswa Laki-laki</small></div></div></div>
+        <div class="col-6 col-md-3"><div class="card stat-card h-100"><div class="card-body text-center"><div class="fw-bold fs-4 text-warning">${grandP}</div><small class="text-muted">Siswa Perempuan</small></div></div></div>
+        <div class="col-6 col-md-3"><div class="card stat-card h-100"><div class="card-body text-center"><div class="fw-bold fs-4 text-success">${grandTotal}</div><small class="text-muted">Total Siswa</small></div></div></div>
+    </div>
+    <div class="form-section">
+        <div class="table-responsive">
+            <table class="table table-sm table-data table-bordered align-middle mb-0" id="tblRekap">
+                <thead class="table-dark">
+                    <tr>
+                        <th rowspan="2" class="text-center align-middle" style="min-width:30px">No</th>
+                        <th rowspan="2" class="text-center align-middle" style="min-width:180px">Madrasah</th>
+                        <th colspan="3" class="text-center">Kelas X</th>
+                        <th colspan="3" class="text-center">Kelas XI</th>
+                        <th colspan="3" class="text-center">Kelas XII</th>
+                        <th colspan="3" class="text-center">Jumlah</th>
+                    </tr>
+                    <tr>
+                        <th class="text-center" style="width:60px">L</th>
+                        <th class="text-center" style="width:60px">P</th>
+                        <th class="text-center" style="width:65px">Total</th>
+                        <th class="text-center" style="width:60px">L</th>
+                        <th class="text-center" style="width:60px">P</th>
+                        <th class="text-center" style="width:65px">Total</th>
+                        <th class="text-center" style="width:60px">L</th>
+                        <th class="text-center" style="width:60px">P</th>
+                        <th class="text-center" style="width:65px">Total</th>
+                        <th class="text-center" style="width:60px">L</th>
+                        <th class="text-center" style="width:60px">P</th>
+                        <th class="text-center" style="width:70px">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${perMadrasah.map((m,i)=>{
+                        const d=m.data;
+                        return `<tr data-nsm="${H(m.nsm)}">
+                            <td class="text-center">${i+1}</td>
+                            <td class="small">${H(m.nama)}</td>
+                            ${kelasList.map(k=>{
+                                const vl=d['k'+k+'_l']||'', vp=d['k'+k+'_p']||'';
+                                const tl=(parseInt(vl)||0)+(parseInt(vp)||0);
+                                return `<td><input type="number" class="form-control form-control-sm text-center rekap-input" data-nsm="${H(m.nsm)}" data-field="k${k}_l" value="${vl}" min="0" style="width:50px" ${canEdit()?'':'disabled'}></td>
+                                <td><input type="number" class="form-control form-control-sm text-center rekap-input" data-nsm="${H(m.nsm)}" data-field="k${k}_p" value="${vp}" min="0" style="width:50px" ${canEdit()?'':'disabled'}></td>
+                                <td class="text-center fw-bold rekap-subtotal" data-nsm="${H(m.nsm)}" data-kelas="${k}">${tl||'-'}</td>`;
+                            }).join('')}
+                            <td class="text-center fw-bold bg-light">${m.totalL||'-'}</td>
+                            <td class="text-center fw-bold bg-light">${m.totalP||'-'}</td>
+                            <td class="text-center fw-bold bg-success bg-opacity-10">${m.total||'-'}</td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+                <tfoot class="table-secondary">
+                    <tr class="fw-bold">
+                        <td colspan="2" class="text-center">JUMLAH TOTAL</td>
+                        ${kelasList.map(k=>{
+                            let kL=0,kP=0;
+                            perMadrasah.forEach(m=>{
+                                kL+=parseInt(m.data['k'+k+'_l']||0)||0;
+                                kP+=parseInt(m.data['k'+k+'_p']||0)||0;
+                            });
+                            return `<td class="text-center">${kL}</td><td class="text-center">${kP}</td><td class="text-center">${kL+kP}</td>`;
+                        }).join('')}
+                        <td class="text-center bg-light">${grandL}</td>
+                        <td class="text-center bg-light">${grandP}</td>
+                        <td class="text-center bg-success bg-opacity-10">${grandTotal}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    <div id="rekapStatus" class="mt-2 small" style="display:none"></div>`;
+
+    // Live update subtotals on input change
+    document.querySelectorAll('.rekap-input').forEach(inp=>{
+        inp.addEventListener('input',function(){
+            const nsm=this.dataset.nsm;
+            // Update per-kelas subtotal
+            const kelas=this.dataset.field.slice(1,3);
+            const row=document.querySelector(`tr[data-nsm="${nsm}"]`);
+            if(!row) return;
+            const vl=row.querySelector(`input[data-field="k${kelas}_l"]`);
+            const vp=row.querySelector(`input[data-field="k${kelas}_p"]`);
+            const sub=row.querySelector(`.rekap-subtotal[data-kelas="${kelas}"]`);
+            if(vl&&vp&&sub) sub.textContent=(parseInt(vl.value)||0)+(parseInt(vp.value)||0)||'-';
+            // Update row totals
+            let rL=0,rP=0;
+            ['10','11','12'].forEach(k=>{
+                const il=row.querySelector(`input[data-field="k${k}_l"]`);
+                const ip=row.querySelector(`input[data-field="k${k}_p"]`);
+                rL+=parseInt(il?.value||0)||0;
+                rP+=parseInt(ip?.value||0)||0;
+            });
+            const cells=row.querySelectorAll('td.fw-bold.bg-light, td.fw-bold.bg-success');
+            if(cells[0]) cells[0].textContent=rL||'-';
+            if(cells[1]) cells[1].textContent=rP||'-';
+            if(cells[2]) cells[2].textContent=(rL+rP)||'-';
+            // Update footer totals
+            let gL=0,gP=0;
+            document.querySelectorAll('tbody tr[data-nsm]').forEach(tr=>{
+                ['10','11','12'].forEach(k=>{
+                    const il=tr.querySelector(`input[data-field="k${k}_l"]`);
+                    const ip=tr.querySelector(`input[data-field="k${k}_p"]`);
+                    gL+=parseInt(il?.value||0)||0;
+                    gP+=parseInt(ip?.value||0)||0;
+                });
+            });
+            const ft=document.querySelectorAll('tfoot td');
+            // recalc per-kelas footer
+            let idx=2;
+            ['10','11','12'].forEach(k=>{
+                let ckL=0,ckP=0;
+                document.querySelectorAll('tbody tr[data-nsm]').forEach(tr=>{
+                    ckL+=parseInt(tr.querySelector(`input[data-field="k${k}_l"]`)?.value||0)||0;
+                    ckP+=parseInt(tr.querySelector(`input[data-field="k${k}_p"]`)?.value||0)||0;
+                });
+                if(ft[idx]) ft[idx].textContent=ckL;
+                if(ft[idx+1]) ft[idx+1].textContent=ckP;
+                if(ft[idx+2]) ft[idx+2].textContent=ckL+ckP;
+                idx+=3;
+            });
+            if(ft[idx]) ft[idx].textContent=gL;
+            if(ft[idx+1]) ft[idx+1].textContent=gP;
+            if(ft[idx+2]) ft[idx+2].textContent=gL+gP;
+            // Update stat cards
+            const cards=document.querySelectorAll('.stat-card .fs-4');
+            if(cards[1]) cards[1].textContent=gL;
+            if(cards[2]) cards[2].textContent=gP;
+            if(cards[3]) cards[3].textContent=gL+gP;
+        });
+    });
+
+    // Save all
+    $('btnSimpanRekap')?.addEventListener('click',function(){
+        this.disabled=true;
+        this.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span>Menyimpan...';
+        const update={};
+        let promises=[];
+        _data.madrasah.forEach(m=>{
+            const nsm=m._id||m.nsm;
+            const entry={};
+            ['10','11','12'].forEach(k=>{
+                const il=document.querySelector(`input[data-nsm="${nsm}"][data-field="k${k}_l"]`);
+                const ip=document.querySelector(`input[data-nsm="${nsm}"][data-field="k${k}_p"]`);
+                entry['k'+k+'_l']=parseInt(il?.value||0)||0;
+                entry['k'+k+'_p']=parseInt(ip?.value||0)||0;
+            });
+            entry._updated=new Date().toISOString();
+            update[nsm]=entry;
+            promises.push(DB.set('rekap_siswa/'+nsm, entry));
+        });
+        // Save tahun ajaran
+        const ta=$('rekapTA')?.value||'';
+        if(ta) promises.push(DB.set('rekap_siswa/_tahun_ajaran', ta));
+        Promise.all(promises).then(()=>{
+            const st=$('rekapStatus');
+            st.innerHTML='<div class="alert alert-success py-2 mb-0"><i class="bi bi-check-circle me-1"></i>Data rekap siswa berhasil disimpan!</div>';
+            st.style.display='block';
+            this.disabled=false;
+            this.innerHTML='<i class="bi bi-save me-1"></i>Simpan Semua';
+            setTimeout(()=>{st.style.display='none';},3000);
+        }).catch(e=>{
+            const st=$('rekapStatus');
+            st.innerHTML='<div class="alert alert-danger py-2 mb-0"><i class="bi bi-exclamation-triangle me-1"></i>Gagal menyimpan: '+H(e.message)+'</div>';
+            st.style.display='block';
+            this.disabled=false;
+            this.innerHTML='<i class="bi bi-save me-1"></i>Simpan Semua';
+        });
+    });
+
+    // Print
+    $('btnCetakRekap')?.addEventListener('click',()=>{window.print();});
 }
 
 // ============ SUPERVISI ============
