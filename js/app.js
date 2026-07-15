@@ -172,14 +172,10 @@ function renderBeranda(){
 }
 
 // ============ MADRASAH ============
+let _viewMdr='card';
 function renderMadrasah(){
-    app.innerHTML=`<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
-        <h4 class="mb-0"><i class="bi bi-building text-primary me-2"></i>Data Madrasah</h4>
-        <div class="d-flex gap-2">
-            <div class="search-box"><i class="bi bi-search"></i><input type="text" class="form-control form-control-sm" id="sMdr" placeholder="Cari..."></div>
-            ${canEdit()?`<button class="btn btn-primary btn-sm" onclick="location.hash='#/madrasah-form'"><i class="bi bi-plus-lg"></i></button>`:''}<button class="btn btn-outline-secondary btn-sm" id="btnCetakMdr"><i class="bi bi-printer me-1"></i>Cetak</button>
-        </div></div>
-    <div class="row g-3" id="mdrGrid">${_data.madrasah.map(m=>`
+    const viewBtns=`<div class="btn-group btn-group-sm me-1" role="group"><button class="btn btn-sm ${_viewMdr==='card'?'btn-primary':'btn-outline-primary'}" id="btnViewCard"><i class="bi bi-grid-3x3-gap"></i></button><button class="btn btn-sm ${_viewMdr==='table'?'btn-primary':'btn-outline-primary'}" id="btnViewTable"><i class="bi bi-table"></i></button></div>`;
+    const renderCards=()=>`<div class="row g-3" id="mdrGrid">${_data.madrasah.map(m=>`
         <div class="col-md-6 col-lg-4 mdr-item" data-q="${H((m.nama||'').toLowerCase())}">
             <div class="card madrasah-card h-100">
                 <div class="card-header py-2 px-3 d-flex justify-content-between align-items-center">
@@ -194,8 +190,19 @@ function renderMadrasah(){
                 <div class="card-footer bg-transparent small text-muted">${guruByNsm(m._id||m.nsm).length} guru | ${siswaByNsm(m._id||m.nsm).length} siswa</div>
             </div>
         </div>`).join('')}</div>`;
+    const renderTabel=()=>`<div class="table-responsive" id="mdrGrid"><table class="table table-sm table-hover table-data"><thead><tr><th>No</th><th>NSM</th><th>Nama Madrasah</th><th>Kepala</th><th>Alamat</th><th>Guru</th><th>Siswa</th>${canEdit()?`<th></th>`:''}</tr></thead><tbody>${_data.madrasah.map((m,i)=>`<tr class="mdr-item" data-q="${H((m.nama||'').toLowerCase())}" style="cursor:pointer" onclick="location.hash='#/madrasah/${m._id||m.nsm}'"><td>${i+1}</td><td>${m.nsm||m._id}</td><td><strong>${H(m.nama)}</strong></td><td>${H(m.kepala)}</td><td>${H(m.alamat)}</td><td class="text-center">${guruByNsm(m._id||m.nsm).length}</td><td class="text-center">${siswaByNsm(m._id||m.nsm).length}</td>${canEdit()?`<td class="text-end" onclick="event.stopPropagation()"><button class="btn btn-sm btn-light py-0 px-1" onclick="location.hash='#/madrasah-form/${m._id||m.nsm}'"><i class="bi bi-pencil text-primary"></i></button> <button class="btn btn-sm btn-light py-0 px-1 btnDelMdr" data-id="${m._id||m.nsm}"><i class="bi bi-trash text-danger"></i></button></td>`:''}</tr>`).join('')}</tbody></table></div>`;
+    app.innerHTML=`<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <h4 class="mb-0"><i class="bi bi-building text-primary me-2"></i>Data Madrasah</h4>
+        <div class="d-flex gap-2">
+            <div class="search-box"><i class="bi bi-search"></i><input type="text" class="form-control form-control-sm" id="sMdr" placeholder="Cari..."></div>
+            ${viewBtns}
+            ${canEdit()?`<button class="btn btn-primary btn-sm" onclick="location.hash='#/madrasah-form'"><i class="bi bi-plus-lg"></i></button>`:''}<button class="btn btn-outline-secondary btn-sm" id="btnCetakMdr"><i class="bi bi-printer me-1"></i>Cetak</button>
+        </div></div>
+    <div id="mdrContent">${_viewMdr==='table'?renderTabel():renderCards()}</div>`;
     $('sMdr').addEventListener('input',function(){const q=this.value.toLowerCase();document.querySelectorAll('.mdr-item').forEach(el=>{el.style.display=el.dataset.q.includes(q)?'':'none';});});
     document.querySelectorAll('.btnDelMdr').forEach(b=>b.addEventListener('click',function(e){e.stopPropagation();if(confirm('Hapus madrasah ini beserta data guru & siswa terkait?')){const id=this.dataset.id;DB.remove('madrasah/'+id);_data.guru.filter(g=>g.nsm===id).forEach(g=>DB.remove('guru/'+g._id));_data.siswa.filter(s=>s.nsm===id).forEach(s=>DB.remove('siswa/'+s._id));}}));
+    $('btnViewCard')?.addEventListener('click',()=>{_viewMdr='card';renderMadrasah();});
+    $('btnViewTable')?.addEventListener('click',()=>{_viewMdr='table';renderMadrasah();});
     $('btnCetakMdr')?.addEventListener('click',()=>{window.print();});
 }
 
