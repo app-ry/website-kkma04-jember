@@ -237,7 +237,7 @@ function renderGuru(){
         <h4 class="mb-0"><i class="bi bi-people text-primary me-2"></i>Data Guru <span class="badge bg-secondary">${_data.guru.length}</span></h4>
         <div class="d-flex gap-2 flex-wrap"><div class="search-box"><i class="bi bi-search"></i><input class="form-control form-control-sm" id="sGuru" placeholder="Cari..."></div>
         <select class="form-select form-select-sm" style="width:auto" id="fGMdr"><option value="">Semua</option>${_data.madrasah.map(m=>`<option value="${m._id||m.nsm}">${H(m.nama)}</option>`).join('')}</select>
-        ${canEdit()?`<a href="#/guru/tambah" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i></a><button class="btn btn-success btn-sm" id="btnTemplateGuru"><i class="bi bi-file-earmark-excel me-1"></i>Template</button><button class="btn btn-warning btn-sm" id="btnImportGuru"><i class="bi bi-upload me-1"></i>Import</button><input type="file" id="inputImportGuru" accept=".xlsx,.xls" style="display:none">`:''}<button class="btn btn-info btn-sm" id="btnExportGuru"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Export Excel</button><button class="btn btn-outline-secondary btn-sm" id="btnCetakGuru"><i class="bi bi-printer me-1"></i>Cetak</button></div></div>
+        ${canEdit()?`<a href="#/guru/tambah" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i></a><button class="btn btn-success btn-sm" id="btnTemplateGuru"><i class="bi bi-file-earmark-excel me-1"></i>Template</button><button class="btn btn-warning btn-sm" id="btnImportGuru"><i class="bi bi-upload me-1"></i>Import</button><input type="file" id="inputImportGuru" accept=".xlsx,.xls" style="display:none">`:''}<select class="form-select form-select-sm" style="width:auto" id="fExportGuru"><option value="">Semua Lembaga</option>${_data.madrasah.map(m=>`<option value="${m._id||m.nsm}">${H(m.nama)}</option>`).join('')}</select><button class="btn btn-info btn-sm" id="btnExportGuru"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Export Excel</button><button class="btn btn-outline-secondary btn-sm" id="btnCetakGuru"><i class="bi bi-printer me-1"></i>Cetak</button></div></div>
     <div class="form-section"><div class="table-responsive"><table class="table table-sm table-data"><thead><tr><th>No</th><th>Nama</th><th>Madrasah</th><th>Mapel</th><th>Status</th>${canEdit()?'<th>Aksi</th>':''}</tr></thead>
     <tbody id="tGuru">${_data.guru.map((g,i)=>{const m=getMadrasah(g.nsm);return`<tr data-nsm="${g.nsm}" data-q="${H((g.nama||'').toLowerCase())}"><td>${i+1}</td><td><strong>${H(g.nama)}</strong></td><td class="small">${m?H(m.nama):'-'}</td><td>${H(g.mapel||'-')}</td><td><span class="badge ${g.status_kepegawaian==='PNS'?'bg-success':'bg-secondary'}">${H(g.status_kepegawaian||'Non-PNS')}</span></td>${canEdit()?`<td><a href="#/guru/edit/${g._id}" class="btn btn-sm btn-outline-primary py-0 px-1"><i class="bi bi-pencil"></i></a> <button class="btn btn-sm btn-outline-danger py-0 px-1 dGuru" data-id="${g._id}"><i class="bi bi-trash"></i></button></td>`:''}</tr>`;}).join('')}</tbody></table></div>
     ${!_data.guru.length?'<p class="text-center text-muted">Belum ada data guru</p>':''}</div>`;
@@ -280,17 +280,21 @@ function renderGuru(){
     });
     // Export Excel Guru
     $('btnExportGuru')?.addEventListener('click',async()=>{
+        const nsm=$('fExportGuru')?.value||'';
+        const md=getMadrasah(nsm);
+        const label=md?md.nama.replace(/[^a-zA-Z0-9]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,''):'Semua_Lembaga';
+        const data=nsm?_data.guru.filter(g=>g.nsm===nsm):_data.guru;
         const wb=new ExcelJS.Workbook();
         const ws=wb.addWorksheet('Data Guru');
         ws.columns=[{header:'No',key:'no',width:5},{header:'NSM',key:'nsm',width:16},{header:'Nama Guru',key:'nama',width:30},{header:'NIP',key:'nip',width:20},{header:'NUPTK',key:'nuptk',width:18},{header:'Madrasah',key:'madrasah',width:30},{header:'Mapel',key:'mapel',width:20},{header:'Status',key:'status_kepegawaian',width:15},{header:'JK',key:'jk',width:8},{header:'Pendidikan',key:'pendidikan',width:12},{header:'No HP',key:'telp',width:15}];
         ws.getRow(1).font={bold:true};
-        _data.guru.forEach((g,i)=>{
+        data.forEach((g,i)=>{
             const m=getMadrasah(g.nsm);
             ws.addRow({no:i+1,nsm:g.nsm,nama:g.nama,nip:g.nip||'',nuptk:g.nuptk||'',madrasah:m?m.nama:'',mapel:g.mapel||'',status_kepegawaian:g.status_kepegawaian||'Non-PNS',jk:g.jk||'',pendidikan:g.pendidikan||'',telp:g.telp||''});
         });
         const buf=await wb.xlsx.writeBuffer();
         const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-        const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Data_Guru_KKMA04.xlsx';a.click();
+        const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`Data_Guru_${label}.xlsx`;a.click();
     });
 }
 
