@@ -131,6 +131,9 @@ main { flex: 1; }
     .hero-section { background: #333 !important; -webkit-print-color-adjust: exact; }
     .print-area { display: block !important; }
     .no-print { display: none !important; }
-    .section-rekap { break-inside: avoid; }
-    .section-daftar { break-inside: avoid; }
+    .print-only { display: block !important; text-align: center; margin-bottom: 10px; }
+    .section-rekap .table-data { break-inside: auto; }
+    .section-rekap tr { break-inside: avoid; }
+    .section-daftar .table-data { break-inside: auto; }
+    .section-daftar tr { break-inside: avoid; }
 }
