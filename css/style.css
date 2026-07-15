@@ -127,6 +127,10 @@ main { flex: 1; }
 }
 
 @media print {
-    .navbar, footer, .btn, .search-box { display: none !important; }
+    .navbar, footer, .btn, .search-box, .btn-group, select, input[type="file"] { display: none !important; }
     .hero-section { background: #333 !important; -webkit-print-color-adjust: exact; }
+    .print-area { display: block !important; }
+    .no-print { display: none !important; }
+    .section-rekap { break-inside: avoid; }
+    .section-daftar { break-inside: avoid; }
 }

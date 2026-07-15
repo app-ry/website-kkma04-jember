@@ -338,14 +338,14 @@ function renderSiswa(){
     app.innerHTML=`<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
         <h4 class="mb-0"><i class="bi bi-mortarboard text-primary me-2"></i>Data Siswa <span class="badge bg-secondary">${_data.siswa.length}</span></h4>
         <div class="d-flex gap-2 flex-wrap"><div class="search-box"><i class="bi bi-search"></i><input class="form-control form-control-sm" id="sSiswa" placeholder="Cari..."></div>
-        ${canEdit()?`<a href="#/siswa/tambah" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i></a><button class="btn btn-success btn-sm" id="btnTemplateSiswa"><i class="bi bi-file-earmark-excel me-1"></i>Template</button><button class="btn btn-warning btn-sm" id="btnImportSiswa"><i class="bi bi-upload me-1"></i>Import</button><input type="file" id="inputImportSiswa" accept=".xlsx,.xls" style="display:none">`:''}<button class="btn btn-outline-secondary btn-sm" id="btnCetakSiswa"><i class="bi bi-printer me-1"></i>Cetak</button></div></div>
-    <div class="form-section mb-4"><h5 class="mb-3"><i class="bi bi-table text-primary me-2"></i>Rekapitulasi Per Lembaga</h5>
+        ${canEdit()?`<a href="#/siswa/tambah" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i></a><button class="btn btn-success btn-sm" id="btnTemplateSiswa"><i class="bi bi-file-earmark-excel me-1"></i>Template</button><button class="btn btn-warning btn-sm" id="btnImportSiswa"><i class="bi bi-upload me-1"></i>Import</button><input type="file" id="inputImportSiswa" accept=".xlsx,.xls" style="display:none">`:''}<button class="btn btn-outline-secondary btn-sm" id="btnCetakRekap"><i class="bi bi-printer me-1"></i>Cetak Rekap</button><button class="btn btn-outline-secondary btn-sm" id="btnCetakDaftar"><i class="bi bi-printer me-1"></i>Cetak Daftar Nama</button></div></div>
+    <div class="section-rekap"><div class="form-section mb-4"><h5 class="mb-3"><i class="bi bi-table text-primary me-2"></i>Rekapitulasi Per Lembaga</h5>
     <div class="table-responsive"><table class="table table-sm table-bordered table-data"><thead><tr><th rowspan="2" class="align-middle text-center">No</th><th rowspan="2" class="align-middle">Madrasah</th><th colspan="2" class="text-center">X</th><th colspan="2" class="text-center">XI</th><th colspan="2" class="text-center">XII</th><th class="text-center">Total</th></tr><tr><th class="text-center">L</th><th class="text-center">P</th><th class="text-center">L</th><th class="text-center">P</th><th class="text-center">L</th><th class="text-center">P</th><th class="text-center">Jml</th></tr></thead>
     <tbody>${rekap.map((r,i)=>`<tr><td class="text-center">${i+1}</td><td class="small">${H(r.nama)}</td><td class="text-center">${r.x_l||'-'}</td><td class="text-center">${r.x_p||'-'}</td><td class="text-center">${r.xi_l||'-'}</td><td class="text-center">${r.xi_p||'-'}</td><td class="text-center">${r.xii_l||'-'}</td><td class="text-center">${r.xii_p||'-'}</td><td class="text-center fw-bold">${r.total||'-'}</td></tr>`).join('')}</tbody>
     <tfoot><tr class="table-success fw-bold"><td colspan="2" class="text-center">TOTAL KKMA 04</td><td class="text-center">${tot('x_l')||'-'}</td><td class="text-center">${tot('x_p')||'-'}</td><td class="text-center">${tot('xi_l')||'-'}</td><td class="text-center">${tot('xi_p')||'-'}</td><td class="text-center">${tot('xii_l')||'-'}</td><td class="text-center">${tot('xii_p')||'-'}</td><td class="text-center">${_data.siswa.length||'-'}</td></tr></tfoot></table></div></div>
-    <div class="form-section"><div class="d-flex flex-wrap gap-2 mb-3"><select class="form-select form-select-sm" style="width:auto" id="fSMdr"><option value="">Semua Madrasah</option>${_data.madrasah.map(m=>`<option value="${m._id||m.nsm}">${H(m.nama)}</option>`).join('')}</select><select class="form-select form-select-sm" style="width:auto" id="fSKls"><option value="">Semua Kelas</option><option>X</option><option>XI</option><option>XII</option></select></div>
+    <div class="section-daftar"><div class="form-section"><div class="d-flex flex-wrap gap-2 mb-3"><select class="form-select form-select-sm" style="width:auto" id="fSMdr"><option value="">Semua Madrasah</option>${_data.madrasah.map(m=>`<option value="${m._id||m.nsm}">${H(m.nama)}</option>`).join('')}</select><select class="form-select form-select-sm" style="width:auto" id="fSKls"><option value="">Semua Kelas</option><option>X</option><option>XI</option><option>XII</option></select></div>
     <div class="table-responsive"><table class="table table-sm table-data"><thead><tr><th>No</th><th>Nama</th><th>Madrasah</th><th>Kelas</th><th>JK</th>${canEdit()?'<th>Aksi</th>':''}</tr></thead><tbody id="tSiswa">${_data.siswa.map((s,i)=>{const m=getMadrasah(s.nsm);return`<tr data-nsm="${s.nsm}" data-kls="${s.kelas||''}" data-q="${H((s.nama||'').toLowerCase())}"><td>${i+1}</td><td>${H(s.nama)}</td><td class="small">${m?H(m.nama):'-'}</td><td>${H(s.kelas||'-')}</td><td>${s.jk||'-'}</td>${canEdit()?`<td><a href="#/siswa/edit/${s._id}" class="btn btn-sm btn-outline-primary py-0 px-1"><i class="bi bi-pencil"></i></a> <button class="btn btn-sm btn-outline-danger py-0 px-1 dSiswa" data-id="${s._id}"><i class="bi bi-trash"></i></button></td>`:''}</tr>`;}).join('')}</tbody></table></div>
-    ${!_data.siswa.length?'<p class="text-center text-muted small">Belum ada data siswa</p>':''}</div>`;
+    ${!_data.siswa.length?'<p class="text-center text-muted small">Belum ada data siswa</p>':''}</div></div>`;
     const sEl=$('sSiswa'),fM=$('fSMdr'),fK=$('fSKls');
     function fil(){const q=(sEl?.value||'').toLowerCase(),n=fM?.value||'',k=fK?.value||'';document.querySelectorAll('#tSiswa tr').forEach(r=>{r.style.display=(r.dataset.q.includes(q)&&(!n||r.dataset.nsm===n)&&(!k||r.dataset.kls===k))?'':'none';});}
     sEl?.addEventListener('input',fil);fM?.addEventListener('change',fil);fK?.addEventListener('change',fil);
@@ -381,7 +381,20 @@ function renderSiswa(){
         });
         alert('Import selesai: '+count+' siswa ditambahkan');this.value='';
     });
-    $('btnCetakSiswa')?.addEventListener('click',()=>{window.print();});
+    $('btnCetakRekap')?.addEventListener('click',()=>{
+        document.querySelector('.section-daftar')?.classList.add('no-print');
+        document.querySelector('.section-rekap')?.classList.add('print-area');
+        window.print();
+        document.querySelector('.section-daftar')?.classList.remove('no-print');
+        document.querySelector('.section-rekap')?.classList.remove('print-area');
+    });
+    $('btnCetakDaftar')?.addEventListener('click',()=>{
+        document.querySelector('.section-rekap')?.classList.add('no-print');
+        document.querySelector('.section-daftar')?.classList.add('print-area');
+        window.print();
+        document.querySelector('.section-rekap')?.classList.remove('no-print');
+        document.querySelector('.section-daftar')?.classList.remove('print-area');
+    });
 }
 
 function renderSiswaForm(editId){
