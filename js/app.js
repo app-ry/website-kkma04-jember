@@ -133,7 +133,7 @@ function renderBeranda(){
     <div class="hero-section text-center">
         <h1><i class="bi bi-building"></i> KKMA 04 Jember</h1>
         <p class="lead mb-1">Kelompok Kerja Madrasah Aliyah</p>
-        <p class="mb-0 opacity-75">Kecamatan Sukowono â€” Kabupaten Jember â€” Jawa Timur</p>
+        <p class="mb-0 opacity-75">Kecamatan Sukowono | Kabupaten Jember | Jawa Timur</p>
     </div>
     <div class="row g-3 mb-4">
         <div class="col-6 col-md-3"><div class="card stat-card h-100"><div class="card-body d-flex align-items-center gap-3"><div class="stat-icon bg-success bg-opacity-10 text-success"><i class="bi bi-building"></i></div><div><div class="fw-bold fs-4">${_data.madrasah.length}</div><small class="text-muted">Madrasah</small></div></div></div></div>
@@ -146,14 +146,14 @@ function renderBeranda(){
             <div class="form-section sambutan-card">
                 <h5 class="mb-3"><i class="bi bi-chat-quote text-primary me-2"></i>Sambutan Pengawas Pembina</h5>
                 <p class="small" style="white-space:pre-line">${H(_profil.sambutan)}</p>
-                <p class="fw-bold mb-0 small text-end">â€” ${H(_profil.pengawas)}</p>
+                <p class="fw-bold mb-0 small text-end">- ${H(_profil.pengawas)}</p>
             </div>
             <div class="form-section">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="mb-0"><i class="bi bi-newspaper text-primary me-2"></i>Berita Terbaru</h5>
-                    <a href="#/informasi" class="btn btn-sm btn-outline-primary">Semua â†’</a>
+                    <a href="#/informasi" class="btn btn-sm btn-outline-primary">Semua &raquo;</a>
                 </div>
-                ${berita.length?berita.map(b=>`<div class="berita-card p-3 mb-2 bg-light rounded"><h6 class="mb-1">${H(b.judul)}</h6><small class="text-muted"><i class="bi bi-calendar me-1"></i>${fmt(b.tanggal)} Â· ${H(b.kategori||'')}</small><p class="small mt-1 mb-0 text-truncate">${H(b.isi)}</p></div>`).join(''):'<p class="text-muted small">Belum ada berita.</p>'}
+                ${berita.length?berita.map(b=>`<div class="berita-card p-3 mb-2 bg-light rounded"><h6 class="mb-1">${H(b.judul)}</h6><small class="text-muted"><i class="bi bi-calendar me-1"></i>${fmt(b.tanggal)} | ${H(b.kategori||'')}</small><p class="small mt-1 mb-0 text-truncate">${H(b.isi)}</p></div>`).join(''):'<p class="text-muted small">Belum ada berita.</p>'}
             </div>
         </div>
         <div class="col-lg-5">
