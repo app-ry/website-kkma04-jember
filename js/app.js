@@ -722,7 +722,7 @@ function renderKontak(){
         <tr><td class="text-muted">Link WA</td><td>${_profil.link_wa?`<a href="${H(_profil.link_wa)}" target="_blank">${H(_profil.link_wa)}</a>`:'(belum diisi)'}</td></tr>
         </table>
         ${_profil.link_wa?`<a href="${H(_profil.link_wa)}" target="_blank" class="btn btn-success btn-sm mb-2"><i class="bi bi-whatsapp me-1"></i>Grup WhatsApp</a><br>`:''}
-        ${canEdit()?`<button class="btn btn-sm btn-outline-primary" id="btnEditKontak"><i class="bi bi-pencil me-1"></i>Edit Info Kontak</button>`:''}</div>
+        ${Session.isAdmin()?`<button class="btn btn-sm btn-outline-primary" id="btnEditKontak"><i class="bi bi-pencil me-1"></i>Edit Info Kontak</button>`:''}</div>
     </div><div class="col-md-7">
         <div class="form-section"><h5 class="mb-3"><i class="bi bi-envelope text-primary me-2"></i>Form Aspirasi / Konsultasi</h5>
         <form id="fAspirasi"><div class="mb-3"><label class="form-label">Nama</label><input class="form-control" name="nama" required></div>
@@ -746,7 +746,7 @@ function renderKontak(){
 // ============ TENTANG ============
 function renderTentang(){
     const foto = _profil.foto || '';
-    app.innerHTML=`<div class="hero-section text-center"><h2>Tentang KKMA 04 Jember</h2><p class="mb-0 opacity-75">Kelompok Kerja Madrasah Aliyah â€” Kecamatan Sukowono</p></div>
+    app.innerHTML=`<div class="hero-section text-center"><h2>Tentang KKMA 04 Jember</h2><p class="mb-0 opacity-75">Kelompok Kerja Madrasah Aliyah | Kecamatan Sukowono</p></div>
     <div class="row g-4"><div class="col-md-6"><div class="form-section h-100"><h5>Profil</h5><table class="table table-sm table-borderless small">
         <tr><td class="text-muted">Nama</td><td><strong>${H(_profil.nama)}</strong></td></tr>
         <tr><td class="text-muted">Wilayah</td><td>${H(_profil.wilayah)}</td></tr>
