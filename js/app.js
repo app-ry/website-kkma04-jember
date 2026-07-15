@@ -191,7 +191,7 @@ function renderMadrasah(){
                     <p class="small text-muted mb-1"><i class="bi bi-person me-1"></i>${H(m.kepala)}</p>
                     <p class="small text-muted mb-0"><i class="bi bi-geo-alt me-1"></i>${H(m.alamat)}</p>
                 </div>
-                <div class="card-footer bg-transparent small text-muted">${guruByNsm(m._id||m.nsm).length} guru Â· ${siswaByNsm(m._id||m.nsm).length} siswa</div>
+                <div class="card-footer bg-transparent small text-muted">${guruByNsm(m._id||m.nsm).length} guru | ${siswaByNsm(m._id||m.nsm).length} siswa</div>
             </div>
         </div>`).join('')}</div>`;
     $('sMdr').addEventListener('input',function(){const q=this.value.toLowerCase();document.querySelectorAll('.mdr-item').forEach(el=>{el.style.display=el.dataset.q.includes(q)?'':'none';});});
