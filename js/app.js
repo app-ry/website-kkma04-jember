@@ -50,12 +50,17 @@ let _ready=false;
 // Listen to all data
 function initListeners(){
     DB.listen('profil',v=>{if(v)_profil=v;if(_ready)navigate();});
-    ['madrasah','guru','siswa','berita','supervisi','laporan','dokumen','galeri','pkkm','pkg','rapor_mutu','aspirasi','uploads','rekap_siswa'].forEach(k=>{
+    ['madrasah','guru','siswa','berita','supervisi','laporan','dokumen','galeri','pkkm','pkg','rapor_mutu','aspirasi','uploads'].forEach(k=>{
         DB.listen(k,v=>{_data[k]=DB.toArray(v);if(_ready)navigate();});
     });
     // Special: madrasah keyed by nsm
     DB.listen('madrasah',v=>{
         if(v){_data.madrasah=Object.keys(v).map(k=>({_id:k,...v[k]}));}else{_data.madrasah=[];}
+        if(_ready)navigate();
+    });
+    // Special: rekap_siswa keyed by nsm, keep as object
+    DB.listen('rekap_siswa',v=>{
+        if(v){_data.rekap_siswa=v;}else{_data.rekap_siswa={};}
         if(_ready)navigate();
     });
 }
