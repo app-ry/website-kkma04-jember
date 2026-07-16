@@ -569,9 +569,9 @@ function renderRekapSiswa(){
                 rP+=parseInt(ip?.value||0)||0;
             });
             const cells=row.querySelectorAll('td.fw-bold.bg-light, td.fw-bold.bg-success');
-            if(cells[0]) cells[0].textContent=rL||'-';
-            if(cells[1]) cells[1].textContent=rP||'-';
-            if(cells[2]) cells[2].textContent=(rL+rP)||'-';
+            if(cells[0]) cells[0].textContent=rL||'';
+            if(cells[1]) cells[1].textContent=rP||'';
+            if(cells[2]) cells[2].textContent=(rL+rP)||'';
             // Update footer totals
             let gL=0,gP=0;
             document.querySelectorAll('tbody tr[data-nsm]').forEach(tr=>{
@@ -616,15 +616,15 @@ function renderRekapSiswa(){
                 const il=row.querySelector(`input[data-field="k${k}_l"]`);
                 const ip=row.querySelector(`input[data-field="k${k}_p"]`);
                 const sub=row.querySelector(`.rekap-subtotal[data-kelas="${k}"]`);
-                const vl=parseInt(il?.value||0)||0;
-                const vp=parseInt(ip?.value||0)||0;
-                if(sub) sub.textContent=(vl+vp)||'-';
+                const vl=parseInt(il?.value)||0;
+                const vp=parseInt(ip?.value)||0;
+                if(sub) sub.textContent=(vl+vp)||'';
                 rL+=vl; rP+=vp;
             });
             const cells=row.querySelectorAll('td.fw-bold.bg-light, td.fw-bold.bg-success');
-            if(cells[0]) cells[0].textContent=rL||'-';
-            if(cells[1]) cells[1].textContent=rP||'-';
-            if(cells[2]) cells[2].textContent=(rL+rP)||'-';
+            if(cells[0]) cells[0].textContent=rL||'';
+            if(cells[1]) cells[1].textContent=rP||'';
+            if(cells[2]) cells[2].textContent=(rL+rP)||'';
         });
         // Footer totals
         let gL=0,gP=0;
@@ -662,8 +662,10 @@ function renderRekapSiswa(){
                 const romanKelas = Object.keys(kelasMap).find(rk=>kelasMap[rk]===k);
                 const il = document.querySelector(`input[data-nsm="${nsm}"][data-field="k${k}_l"]`);
                 const ip = document.querySelector(`input[data-nsm="${nsm}"][data-field="k${k}_p"]`);
-                if(il) il.value = sl.filter(s=>s.kelas===romanKelas&&s.jk==='L').length;
-                if(ip) ip.value = sl.filter(s=>s.kelas===romanKelas&&s.jk==='P').length;
+                const cL=sl.filter(s=>s.kelas===romanKelas&&s.jk==='L').length;
+                const cP=sl.filter(s=>s.kelas===romanKelas&&s.jk==='P').length;
+                if(il) il.value = cL||'';
+                if(ip) ip.value = cP||'';
             });
         });
         updateRekapTotal();
