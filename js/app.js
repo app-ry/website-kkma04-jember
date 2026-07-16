@@ -427,15 +427,38 @@ function renderRekapSiswa(){
     const kelasList = ['10','11','12'];
     const tahunAjaran = rs._tahun_ajaran || new Date().getFullYear()+'/'+(new Date().getFullYear()+1);
 
+    // Auto-calculate from actual siswa data
+    const kelasMap = {'X':'10','XI':'11','XII':'12'};
+    const autoCalc = {};
+    _data.madrasah.forEach(m=>{
+        const nsm = m._id||m.nsm;
+        const sl = siswaByNsm(nsm);
+        const entry = {};
+        kelasList.forEach(k=>{
+            const romanKelas = Object.keys(kelasMap).find(rk=>kelasMap[rk]===k);
+            entry['k'+k+'_l'] = sl.filter(s=>s.kelas===romanKelas&&s.jk==='L').length;
+            entry['k'+k+'_p'] = sl.filter(s=>s.kelas===romanKelas&&s.jk==='P').length;
+        });
+        autoCalc[nsm] = entry;
+    });
+
     // Grand totals
     let grandL=0, grandP=0, grandTotal=0;
     const perMadrasah = _data.madrasah.map(m=>{
         const nsm = m._id||m.nsm;
-        const d = rs[nsm] || {};
+        const manual = rs[nsm] || {};
+        const auto = autoCalc[nsm] || {};
+        // Merge: use manual if any field exists, else auto
+        const d = {};
         let mL=0, mP=0;
+        const hasManual = kelasList.some(k=>manual.hasOwnProperty('k'+k+'_l')||manual.hasOwnProperty('k'+k+'_p'));
         kelasList.forEach(k=>{
-            mL += parseInt(d['k'+k+'_l']||0)||0;
-            mP += parseInt(d['k'+k+'_p']||0)||0;
+            const vl = hasManual ? (parseInt(manual['k'+k+'_l'])||0) : (auto['k'+k+'_l']||0);
+            const vp = hasManual ? (parseInt(manual['k'+k+'_p'])||0) : (auto['k'+k+'_p']||0);
+            d['k'+k+'_l'] = vl;
+            d['k'+k+'_p'] = vp;
+            mL += vl;
+            mP += vp;
         });
         grandL+=mL; grandP+=mP; grandTotal+=mL+mP;
         return {nsm, nama:m.nama, data:d, totalL:mL, totalP:mP, total:mL+mP};
@@ -447,6 +470,7 @@ function renderRekapSiswa(){
         <div class="d-flex gap-2 align-items-center">
             <small class="text-muted">Tahun Ajaran:</small>
             <input type="text" class="form-control form-control-sm" style="width:120px" id="rekapTA" value="${H(tahunAjaran)}">
+            <button class="btn btn-info btn-sm" id="btnAutoRekap" title="Isi otomatis dari data siswa"><i class="bi bi-magic me-1"></i>Isi Otomatis</button>
             ${canEdit()?`<button class="btn btn-success btn-sm" id="btnSimpanRekap"><i class="bi bi-save me-1"></i>Simpan Semua</button>`:''}
             <button class="btn btn-outline-secondary btn-sm" id="btnCetakRekap"><i class="bi bi-printer me-1"></i>Cetak</button>
         </div>
@@ -581,6 +605,72 @@ function renderRekapSiswa(){
             if(cards[2]) cards[2].textContent=gP;
             if(cards[3]) cards[3].textContent=gL+gP;
         });
+    });
+
+    // Helper: update all rekap totals after auto-fill
+    function updateRekapTotal(){
+        document.querySelectorAll('tbody tr[data-nsm]').forEach(row=>{
+            const nsm=row.dataset.nsm;
+            let rL=0,rP=0;
+            ['10','11','12'].forEach(k=>{
+                const il=row.querySelector(`input[data-field="k${k}_l"]`);
+                const ip=row.querySelector(`input[data-field="k${k}_p"]`);
+                const sub=row.querySelector(`.rekap-subtotal[data-kelas="${k}"]`);
+                const vl=parseInt(il?.value||0)||0;
+                const vp=parseInt(ip?.value||0)||0;
+                if(sub) sub.textContent=(vl+vp)||'-';
+                rL+=vl; rP+=vp;
+            });
+            const cells=row.querySelectorAll('td.fw-bold.bg-light, td.fw-bold.bg-success');
+            if(cells[0]) cells[0].textContent=rL||'-';
+            if(cells[1]) cells[1].textContent=rP||'-';
+            if(cells[2]) cells[2].textContent=(rL+rP)||'-';
+        });
+        // Footer totals
+        let gL=0,gP=0;
+        const ft=document.querySelectorAll('tfoot td');
+        let idx=2;
+        ['10','11','12'].forEach(k=>{
+            let ckL=0,ckP=0;
+            document.querySelectorAll('tbody tr[data-nsm]').forEach(tr=>{
+                ckL+=parseInt(tr.querySelector(`input[data-field="k${k}_l"]`)?.value||0)||0;
+                ckP+=parseInt(tr.querySelector(`input[data-field="k${k}_p"]`)?.value||0)||0;
+            });
+            if(ft[idx]) ft[idx].textContent=ckL;
+            if(ft[idx+1]) ft[idx+1].textContent=ckP;
+            if(ft[idx+2]) ft[idx+2].textContent=ckL+ckP;
+            gL+=ckL; gP+=ckP;
+            idx+=3;
+        });
+        if(ft[idx]) ft[idx].textContent=gL;
+        if(ft[idx+1]) ft[idx+1].textContent=gP;
+        if(ft[idx+2]) ft[idx+2].textContent=gL+gP;
+        // Stat cards
+        const cards=document.querySelectorAll('.stat-card .fs-4');
+        if(cards[1]) cards[1].textContent=gL;
+        if(cards[2]) cards[2].textContent=gP;
+        if(cards[3]) cards[3].textContent=gL+gP;
+    }
+
+    // Auto-fill from siswa data
+    $('btnAutoRekap')?.addEventListener('click',function(){
+        const kelasMap = {'X':'10','XI':'11','XII':'12'};
+        _data.madrasah.forEach(m=>{
+            const nsm = m._id||m.nsm;
+            const sl = siswaByNsm(nsm);
+            ['10','11','12'].forEach(k=>{
+                const romanKelas = Object.keys(kelasMap).find(rk=>kelasMap[rk]===k);
+                const il = document.querySelector(`input[data-nsm="${nsm}"][data-field="k${k}_l"]`);
+                const ip = document.querySelector(`input[data-nsm="${nsm}"][data-field="k${k}_p"]`);
+                if(il) il.value = sl.filter(s=>s.kelas===romanKelas&&s.jk==='L').length;
+                if(ip) ip.value = sl.filter(s=>s.kelas===romanKelas&&s.jk==='P').length;
+            });
+        });
+        updateRekapTotal();
+        const st=$('rekapStatus');
+        st.innerHTML='<div class="alert alert-info py-2 mb-0"><i class="bi bi-magic me-1"></i>Data rekap diisi otomatis dari data siswa. Silakan edit jika perlu lalu Simpan.</div>';
+        st.style.display='block';
+        setTimeout(()=>{st.style.display='none';},5000);
     });
 
     // Save all
